@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PC//STORE
 
-## Getting Started
+Next.js 16 + Supabase foundation for a PC parts store and admin dashboard.
 
-First, run the development server:
+## Phase 1
+
+- pnpm + TypeScript strict + App Router + `src/`
+- Tailwind CSS v4 design tokens
+- Shared UI and layout primitives
+- Placeholder public store home page
+- Zod environment validation
+- ESLint, Prettier, and typecheck gates
+
+## Phase 2
+
+- Supabase CLI config plus one-concern timestamped migrations
+- RLS on every table with admin role in Auth `app_metadata`
+- Storage buckets and admin-only write policies
+- Generated database types and seed data
+- Browser, cookie server, proxy session, and server-only admin clients
+- Next.js 16 `src/proxy.ts` with session refresh and `/admin` protection
+- First-admin bootstrap script
+
+See `docs/DECISIONS.md`, `docs/ARCHITECTURE.md`, and `docs/CONTENT-MODEL.md` for confirmed conventions and structure.
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
+cp .env.example .env.local
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Local Supabase
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Requires Docker (or another Supabase-supported container runtime).
 
-## Learn More
+```bash
+pnpm db:start
+pnpm db:reset
+pnpm db:types
+```
 
-To learn more about Next.js, take a look at the following resources:
+Copy the local URL, publishable key, and secret key from `pnpm supabase status` into `.env.local`. Bootstrap the first admin with:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+pnpm admin:bootstrap admin@example.com
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+To create a new admin instead of promoting an existing user, set `ADMIN_PASSWORD` in the environment first. No credentials are hardcoded.
 
-## Deploy on Vercel
+## Verification
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+pnpm lint
+pnpm typecheck
+pnpm build
+pnpm format:check
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`pnpm check` runs lint, typecheck, and format check together.
+
+The home page is composed in `src/app/(store)/page.tsx` and wrapped by the public shell in `src/app/(store)/layout.tsx`.

@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@theme {
+  --color-black-950: #050505;
+  --color-black-900: #0a0a0a;
+  --color-black-850: #0f0f0f;
+  --color-surface-900: #141414;
+  --color-surface-800: #1c1c1c;
+  --color-surface-700: #2a2a2a;
+  --color-surface-500: #737373;
+  --color-surface-400: #a3a3a3;
+  --color-surface-200: #d4d4d4;
+  --color-accent: #b8ff2e;
+  --color-accent-strong: #7fd400;
+  --color-accent-soft: #d4ff7a;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --spacing-section: 6rem;
+  --container-store: 84rem;
+  --radius-card: 1rem;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-normal: 200ms;
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-black-950 font-sans text-white antialiased;
+  }
+
+  ::selection {
+    @apply bg-accent text-black-950;
+  }
+
+  *:focus-visible {
+    @apply ring-accent ring-offset-black-950 ring-2 ring-offset-2 outline-none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

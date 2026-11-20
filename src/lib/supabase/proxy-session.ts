@@ -1,0 +1,69 @@
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
+
+import { ADMIN_PATH_PREFIX, ADMIN_ROLE } from "@/lib/constants";
+import { getEnv } from "@/lib/env";
+import type { Database } from "@/lib/supabase/types";
+
+function copyResponseState(source: NextResponse, target: NextResponse): void {
+  for (const cookie of source.cookies.getAll()) {
+    target.cookies.set(cookie);
+  }
+
+  source.headers.forEach((value, key) => {
+    if (key.toLowerCase() !== "set-cookie") {
+      target.headers.set(key, value);
+    }
+  });
+}
+
+function isAdminRoute(pathname: string): boolean {
+  return pathname === ADMIN_PATH_PREFIX || pathname.startsWith(`${ADMIN_PATH_PREFIX}/`);
+}
+
+export async function updateSession(request: NextRequest): Promise<NextResponse> {
+  const env = getEnv();
+  let supabaseResponse = NextResponse.next({ request });
+
+  const supabase = createServerClient<Database>(
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet, headers) {
+          for (const { name, value } of cookiesToSet) {
+            request.cookies.set(name, value);
+          }
+
+          supabaseResponse = NextResponse.next({ request });
+
+          for (const { name, value, options } of cookiesToSet) {
+            supabaseResponse.cookies.set(name, value, options);
+          }
+
+          for (const [key, value] of Object.entries(headers)) {
+            supabaseResponse.headers.set(key, value);
+          }
+        },
+      },
+    },
+  );
+
+  const { data } = await supabase.auth.getClaims();
+  const isAdmin = data?.claims.app_metadata?.role === ADMIN_ROLE;
+
+  if (isAdminRoute(request.nextUrl.pathname) && !isAdmin) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = "/login";
+    redirectUrl.searchParams.set("next", `${request.nextUrl.pathname}${request.nextUrl.search}`);
+
+    const redirectResponse = NextResponse.redirect(redirectUrl);
+    copyResponseState(supabaseResponse, redirectResponse);
+    return redirectResponse;
+  }
+
+  return supabaseResponse;
+}
