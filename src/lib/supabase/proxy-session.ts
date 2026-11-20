@@ -1,20 +1,23 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-import { ADMIN_PATH_PREFIX, ADMIN_ROLE } from "@/lib/constants";
+import { ADMIN_PATH_PREFIX, ADMIN_ROLE, NEXT_PARAM, ROUTES } from "@/lib/constants";
 import { getEnv } from "@/lib/env";
 import type { Database } from "@/lib/supabase/types";
+
+const SECURITY_HEADERS = ["cache-control", "pragma", "expires"] as const;
 
 function copyResponseState(source: NextResponse, target: NextResponse): void {
   for (const cookie of source.cookies.getAll()) {
     target.cookies.set(cookie);
   }
 
-  source.headers.forEach((value, key) => {
-    if (key.toLowerCase() !== "set-cookie") {
+  for (const key of SECURITY_HEADERS) {
+    const value = source.headers.get(key);
+    if (value) {
       target.headers.set(key, value);
     }
-  });
+  }
 }
 
 function isAdminRoute(pathname: string): boolean {
@@ -53,12 +56,16 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   );
 
   const { data } = await supabase.auth.getClaims();
-  const isAdmin = data?.claims.app_metadata?.role === ADMIN_ROLE;
+  const role = data?.claims.app_metadata?.role;
+  const isAdmin = typeof role === "string" && role === ADMIN_ROLE;
 
   if (isAdminRoute(request.nextUrl.pathname) && !isAdmin) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/login";
-    redirectUrl.searchParams.set("next", `${request.nextUrl.pathname}${request.nextUrl.search}`);
+    redirectUrl.pathname = ROUTES.login;
+    redirectUrl.searchParams.set(
+      NEXT_PARAM,
+      `${request.nextUrl.pathname}${request.nextUrl.search}`,
+    );
 
     const redirectResponse = NextResponse.redirect(redirectUrl);
     copyResponseState(supabaseResponse, redirectResponse);

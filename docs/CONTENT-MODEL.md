@@ -70,7 +70,9 @@ The schema is defined by timestamped migrations in `supabase/migrations/`. Every
 ### `home_sections`
 
 - Unique `key`, `kind`, optional `title`/`subtitle`, `body jsonb`, `config jsonb`.
-- Allowed `kind` values: `hero`, `featured_products`, `category_grid`, `banner_carousel`, `rich_text`.
+- Current `kind` values: `hero`, `marquee`, `banners`, `featured_categories`, `featured_products`, `build_cta`, `why_us`, `newsletter`, `footer_cta`.
+- Legacy `category_grid`, `banner_carousel`, and `rich_text` rows are still accepted and normalized to `featured_categories`, `banners`, and `why_us`.
+- `config` supports `limit`, `variants`, `items`, `href`, and `label`. `body` may contain arrays such as trust `points`.
 - `sort_order`, `is_published`, `published_at` control public composition.
 
 ### `orders`
@@ -112,7 +114,7 @@ Bucket definitions live in `supabase/config.toml` for local development and in `
 
 ## Cache tags
 
-Public queries should use these tags when revalidation is wired in later phases. Admin mutations should revalidate the matching tags.
+Public queries use these tags through `cacheTag()` inside `use cache` functions. Admin mutations should revalidate the matching tags with `revalidateTag()`.
 
 | Content                     | Tag             |
 | --------------------------- | --------------- |
@@ -123,7 +125,7 @@ Public queries should use these tags when revalidation is wired in later phases.
 | Home sections               | `home-sections` |
 | Orders                      | `orders`        |
 
-Constants live in `src/lib/constants.ts` as `CACHE_TAGS`.
+Constants live in `src/lib/constants.ts` as `CACHE_TAGS`. Public reads are in `features/*/queries`; admin mutations should revalidate the corresponding tag. See `docs/PLACEHOLDER-ART.md` for the current asset placeholders and how to replace them.
 
 ## First admin
 

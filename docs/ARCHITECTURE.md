@@ -1,8 +1,8 @@
-# Architecture — Phases 1 and 2
+# Architecture — Phases 1, 2, 3, and 4
 
 ## Principles
 
-- Server Components by default. `"use client"` only on the smallest interactive leaf (currently `MobileNav` and `error.tsx`).
+- Server Components by default. `"use client"` only on the smallest interactive leaf (for example `MobileNav`, `error.tsx`, `ScrollHeroLoader`, `ParallaxBanner`, and `NewsletterSection`).
 - Pages compose; they do not contain business logic.
 - One component per file, one responsibility per file, maximum ~150 code lines per file (lint-enforced).
 - Shared UI is dumb and reusable. Feature-specific UI stays under `src/features/<feature>/`.
@@ -14,9 +14,10 @@
 
 - `src/app/layout.tsx`: root HTML shell, `next/font`, metadata, global CSS.
 - `src/app/(store)/layout.tsx`: public store shell with `Header`, `main`, and `Footer`.
-- `src/app/(store)/page.tsx`: placeholder home page composed from shared UI and `features/home/config`.
-- `src/app/(auth)/`: login route placeholders.
-- `src/app/admin/`: future admin guard and shell.
+- `src/app/(store)/page.tsx`: composition-only home page; it fetches `getHomePageData()` and renders sections in `home_sections.sort_order`.
+- `src/app/(auth)/login` and `src/app/(auth)/signup`: auth forms composed from `features/auth`.
+- `src/app/(store)/orders/page.tsx`: guarded customer account placeholder.
+- `src/app/admin/`: guarded admin shell and overview page.
 - `src/app/api/`: Route Handlers only when truly needed (for example webhooks).
 - `src/app/not-found.tsx` and `src/app/error.tsx`: base error surfaces.
 
@@ -32,17 +33,19 @@ Each feature owns its components, data access, validation, and configuration:
 - `store/`: client state for the feature (for example cart).
 - `payments/`, `lib/`, `config/`: feature-specific helpers and constants.
 
-Placeholders in this phase are `.gitkeep` files. They will be replaced by real files in later phases.
+Phase 4 filled the `home`, `scroll-hero`, `banners`, `site-content`, `products`, and `categories` feature folders. Remaining empty folders are reserved for later phases.
 
 ## Shared layers
 
-- `src/components/ui/`: `Button`, `LinkButton`, `Container`, `Section`, `Heading`, `Badge`, `Skeleton`, and `button-styles.ts`.
+- `src/components/ui/`: `Button`, `Input`, `LinkButton`, `Container`, `Section`, `Heading`, `Badge`, `Skeleton`, and `button-styles.ts`.
 - `src/components/layout/`: `Header`, `Footer`, `Logo`, `DesktopNav`, `MobileNav`, `CartIndicator`, and `nav-items.ts`.
-- `src/lib/constants.ts`: site metadata, route constants, navigation labels, placeholders.
+- `src/lib/constants.ts`: site metadata, route constants, navigation labels, cache tags, storage buckets, blur placeholder.
 - `src/lib/env.ts`: Zod-validated environment access via `getEnv()`, `getPublicEnv()`, and `getSiteUrl()`.
+- `src/lib/format/`: asset URL resolution, safe external href validation, and EGP formatting.
+- `src/hooks/use-prefers-reduced-motion.ts`: shared `useSyncExternalStore` media-query hook.
 - `src/lib/utils/cn.ts`: tiny class-name joiner.
 - `src/lib/supabase/client.ts`: browser client using only publishable env values.
-- `src/lib/supabase/server.ts`: cookie-based server client for Server Components/Actions.
+- `src/lib/supabase/server.ts`: cookie-based server client for Server Components/Actions plus `createPublicClient()` for unauthenticated tagged reads.
 - `src/lib/supabase/proxy-session.ts`: session refresh and admin route check used by `src/proxy.ts`.
 - `src/lib/supabase/admin.ts`: server-only client using `SUPABASE_SECRET_KEY`.
 - `src/lib/supabase/types.ts`: generated public-schema types; do not edit by hand.
@@ -52,7 +55,7 @@ Placeholders in this phase are `.gitkeep` files. They will be replaced by real f
 - Use aliases: `@/features/*`, `@/components/*`, `@/lib/*`, plus the generated `@/*`.
 - Shared UI must not import feature code.
 - Layout components may import shared UI and `lib/constants`, but not feature queries/actions.
-- Pages may import feature sections/config and shared UI; data fetching will be delegated to `features/*/queries` in later phases.
+- Pages may import one feature data helper and feature renderers; all Supabase access stays in `features/*/queries`.
 - Client components must not import server-only secrets or `@/lib/env` fields containing secret keys.
 
 ## Styling
@@ -62,11 +65,28 @@ Placeholders in this phase are `.gitkeep` files. They will be replaced by real f
 - No CSS modules, styled-components, or inline `style={{}}`. Arbitrary Tailwind values are used only for effects Tailwind tokens cannot express (for example `duration-[var(--duration-normal)]`).
 - Focus-visible styling and reduced-motion behavior are global base-layer rules.
 
+## Authentication and authorization
+
+- `features/auth/lib/claims.ts` verifies identity with `getClaims()` and returns a narrow DTO.
+- `features/auth/lib/require-user.ts` guards customer account pages; `require-admin.ts` guards every admin layout and page.
+- `src/proxy.ts` refreshes the session on every non-static request and performs the optimistic `/admin` redirect. It never runs database checks.
+- All session-reading components sit behind `<Suspense>` because Cache Components is enabled.
+- The three admin layers are independent: proxy redirect, `requireAdmin()`, and the Phase 2 RLS policies.
+
+## Phase 4 data and animation flow
+
+- `features/home/queries/get-home-page-data.ts` is the single page data helper. It composes cached reads from `home`, `banners`, `categories`, `products`, and `site-content`.
+- `src/app/(store)/page.tsx` only calls that helper, emits JSON-LD, and maps `home_sections` to `HomeSectionRenderer`.
+- `HomeSectionRenderer` maps each section kind to one file under `features/home/sections/`. Banner variants map to `FullWidthPromo`, `SplitBanner`, or `CategoryStrip`.
+- `ScrollHeroLoader` dynamically imports the heavy `ScrollHero` client component. `ScrollHero` owns the reduced-motion branch and mounts `SmoothScrollProvider`, `HeroStage`, and `HeroCopy`.
+- `useHeroTimeline` is the only module that imports GSAP/ScrollTrigger, using dynamic `import()` so those bytes are not in the initial non-animated bundle. `SmoothScrollProvider` dynamically imports Lenis and uses the same GSAP ticker.
+- Parallax banners lazy-load GSAP/ScrollTrigger only after an `IntersectionObserver` reports the banner near the viewport.
+
 ## Security and data boundaries
 
-- Supabase clients live in `src/lib/supabase/*`; feature reads and mutations will live in `features/*/queries` and `features/*/actions`.
+- Supabase clients live in `src/lib/supabase/*`; feature reads and mutations live in `features/*/queries` and `features/*/actions`.
 - All tables have RLS enabled. Public reads are limited to published/active content; writes are admin-only.
-- Admin role lives in `app_metadata` and is checked by SQL policies and `src/proxy.ts`. Server Action checks will use the same verified-claims pattern in later phases.
+- Admin role lives in `app_metadata` and is checked by SQL policies, the proxy, and `requireAdmin()`. Future admin Server Actions must call `requireAdmin()` before mutating.
 - `SUPABASE_SECRET_KEY` stays server-only. Public URL and publishable key use `NEXT_PUBLIC_` names.
 
 ## Verification

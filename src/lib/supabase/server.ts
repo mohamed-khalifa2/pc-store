@@ -1,10 +1,21 @@
 import "server-only";
 
 import { createServerClient } from "@supabase/ssr";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
-import { getEnv } from "@/lib/env";
+import { getEnv, getPublicEnv } from "@/lib/env";
 import type { Database } from "@/lib/supabase/types";
+
+export function createPublicClient() {
+  const env = getPublicEnv();
+
+  return createSupabaseClient<Database>(
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    { auth: { persistSession: false, autoRefreshToken: false } },
+  );
+}
 
 export async function createClient() {
   const cookieStore = await cookies();

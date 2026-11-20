@@ -68,11 +68,15 @@ insert into public.home_sections (
   key, kind, title, subtitle, body, config, sort_order, is_published, published_at
 )
 values
-  ('home.hero', 'hero', 'Built for the next level', 'Parts, prebuilts, and expert support.', $json${"badge":"New season"}$json$::jsonb, $json${"banner_key":"Build Week"}$json$::jsonb, 10, true, now()),
-  ('home.featured', 'featured_products', 'Featured builds', 'Hand-picked components for serious builders.', $json${}$json$::jsonb, $json${"limit":8}$json$::jsonb, 20, true, now()),
-  ('home.categories', 'category_grid', 'Shop by category', 'Find the right upgrade fast.', $json${}$json$::jsonb, $json${"limit":9}$json$::jsonb, 30, true, now()),
-  ('home.banners', 'banner_carousel', 'Latest drops', 'Campaigns and launches.', $json${}$json$::jsonb, $json${"limit":3}$json$::jsonb, 40, true, now()),
-  ('home.promise', 'rich_text', 'Why PC//STORE', 'Built by builders, backed by real support.', $json${"points":["Verified parts","Fast delivery","Upgrade advice"]}$json$::jsonb, $json${}$json$::jsonb, 50, true, now())
+  ('home.hero', 'hero', 'Built for the next level', 'Parts, prebuilts, and expert support.', $json${"badge":"New season"}$json$::jsonb, $json${}$json$::jsonb, 10, true, now()),
+  ('home.marquee', 'marquee', 'Trusted by builders', null, $json${}$json$::jsonb, $json${"items":["AMD","NVIDIA","ASUS","MSI","CORSAIR","SAMSUNG"]}$json$::jsonb, 20, true, now()),
+  ('home.banners', 'banners', 'Latest drops', 'Campaigns and launches.', $json${}$json$::jsonb, $json${"limit":3,"variants":["full","split","strip"]}$json$::jsonb, 30, true, now()),
+  ('home.categories', 'featured_categories', 'Shop by category', 'Find the right upgrade fast.', $json${}$json$::jsonb, $json${"limit":6}$json$::jsonb, 40, true, now()),
+  ('home.featured', 'featured_products', 'Featured builds', 'Hand-picked components for serious builders.', $json${}$json$::jsonb, $json${"limit":4}$json$::jsonb, 50, true, now()),
+  ('home.build_cta', 'build_cta', 'Build with confidence', 'Pick compatible parts without the guesswork.', $json${}$json$::jsonb, $json${"label":"Start a build","href":"/products"}$json$::jsonb, 60, true, now()),
+  ('home.promise', 'why_us', 'Why PC//STORE', 'Built by builders, backed by real support.', $json${"points":["Verified parts","Fast delivery","Upgrade advice","Builder-tested picks"]}$json$::jsonb, $json${}$json$::jsonb, 70, true, now()),
+  ('home.newsletter', 'newsletter', 'Stay in the loop', 'Drops, deals, and build guides. No noise.', $json${}$json$::jsonb, $json${}$json$::jsonb, 80, true, now()),
+  ('home.footer_cta', 'footer_cta', 'Ready to upgrade?', 'The next build starts here.', $json${}$json$::jsonb, $json${"label":"Shop all parts","href":"/products"}$json$::jsonb, 90, true, now())
 on conflict (key) do update
 set kind = excluded.kind,
     title = excluded.title,

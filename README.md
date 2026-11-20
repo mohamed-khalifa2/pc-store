@@ -21,7 +21,15 @@ Next.js 16 + Supabase foundation for a PC parts store and admin dashboard.
 - Next.js 16 `src/proxy.ts` with session refresh and `/admin` protection
 - First-admin bootstrap script
 
-See `docs/DECISIONS.md`, `docs/ARCHITECTURE.md`, and `docs/CONTENT-MODEL.md` for confirmed conventions and structure.
+## Phase 3
+
+- Email/password login and signup with Zod-validated Server Actions
+- Friendly, field-level auth error messages
+- Session refresh in `src/proxy.ts`
+- Three-layer admin protection: proxy redirect, `requireAdmin()`, and RLS
+- Customer account placeholder at `/orders`
+
+See `docs/DECISIONS.md`, `docs/ARCHITECTURE.md`, `docs/CONTENT-MODEL.md`, and `docs/MANUAL-TESTS.md` for conventions, structure, and verification steps.
 
 ## Getting started
 

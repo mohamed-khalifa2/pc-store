@@ -1,10 +1,14 @@
-# Technical decisions — Phases 1 and 2
+# Technical decisions — Phases 1, 2, 3, and 4
 
 ## Scope
 
 Phase 1 established the foundation only: tooling, folder structure, design tokens, UI/layout primitives, base layout, placeholder home page, and validation commands.
 
-Phase 2 adds the Supabase backend foundation: local config, migrations, RLS, storage buckets and policies, generated database types, seed data, browser/server/admin clients, proxy-based session refresh and admin route protection, and a first-admin bootstrap script.
+Phase 2 added the Supabase backend foundation: local config, migrations, RLS, storage buckets and policies, generated database types, seed data, browser/server/admin clients, proxy-based session refresh and admin route protection, and a first-admin bootstrap script.
+
+Phase 3 added the auth experience: email/password forms backed by Server Actions, Zod validation with friendly messages, identity helpers built on `getClaims()`, a three-layer admin guard, and a customer account placeholder for orders.
+
+Phase 4 adds the data-driven home page: tagged Supabase reads with typed defaults, a GSAP/Lenis scroll hero, parallax banner variants, all supporting home sections, section ordering from `home_sections`, and SEO metadata/JSON-LD.
 
 ## Confirmed versions (2026-11-20)
 
@@ -82,9 +86,53 @@ Official docs were checked before implementation. Direct fetches to `supabase.co
 - `src/lib/supabase/types.ts` was generated with Supabase CLI 3.2.0 from that seeded schema and then formatted with Prettier. Running `pnpm db:types` against a full local stack will regenerate the same public-schema shape.
 - A fresh full-stack check is still required once Docker is available: `pnpm db:start && pnpm db:reset && pnpm db:types`.
 
+## Phase 3 decisions
+
+- Forms use Server Actions with React 19 `useActionState`; the pending state comes from `useFormStatus()` in the smallest client leaf (`SubmitButton`). No React Hook Form is needed for these two simple forms.
+- Every auth action validates raw `FormData` with Zod on the server. Zod issues are converted to per-field messages with `z.flattenError()`; provider errors are converted with a code/message rule table in `features/auth/lib/messages.ts`.
+- `getVerifiedClaims()` in `features/auth/lib/claims.ts` is the single server-side identity helper. It uses `supabase.auth.getClaims()` and returns a narrow DTO rather than exposing raw JWT claims.
+- Admin protection has three independent layers: the proxy redirect, `requireAdmin()` in every admin layout/page, and the Phase 2 RLS policies. `requireUser()` uses the same helper for customer account pages.
+- With `cacheComponents: true`, session readers live behind `<Suspense>` boundaries. The admin layout wraps its guard and shell in one boundary so non-admins never receive admin UI while the check is pending.
+- The `next` redirect target is validated by `safeNextPath()` before being written to the login form or followed by the login action. Protocol-relative URLs, backslashes, and control characters are rejected.
+- `AUTH_MESSAGES`, `AUTH_COPY`, and `NEXT_PARAM` centralize display copy and the redirect query key. A `--color-danger` token was added for form errors; no hex values appear in components.
+- Login honors the `next` query parameter added by the proxy, so an anonymous `/admin` request returns to the requested admin page after sign-in.
+
+## Phase 3 verification
+
+- `pnpm check` and `pnpm build` pass. `/admin`, `/login`, and `/orders` are Partial Prerender routes; `/signup` is static.
+- A dev-server smoke test with placeholder env values confirmed anonymous `GET /admin` returns `307` with `location: /login?next=%2Fadmin`, and anonymous `GET /orders` streams a redirect to `/login` from `requireUser()`.
+- See `docs/MANUAL-TESTS.md` for the full role/redirect checklist and form flows.
+- Authenticated admin/customer verification against a running Supabase stack is still manual because Docker is unavailable here.
+
+## Phase 4 decisions
+
+- Public Supabase reads use a dedicated `createPublicClient()` without cookies so they can run inside `use cache`. Cached functions call `cacheTag()` and `cacheLife("hours")`; cookies/headers remain outside cached scopes.
+- Every external `jsonb`/row value is parsed with Zod and merged with a typed default. Empty tables, invalid rows, network failures, and missing env values render the typed defaults instead of throwing.
+- Banner publication is governed by RLS (`is_active`, `published_at`, `starts_at`, `ends_at`); the schema has no `is_published` column, so the query filters only on `is_active` and lets RLS enforce the time window.
+- `home_sections` was expanded with a forward-only migration. Legacy kinds are accepted in the database and normalized in `features/home/lib/normalize-section.ts`, so existing seed data cannot break the page.
+- Banner variants are presentation config, not a database column. `features/home/queries/get-home-page-data.ts` applies section `config.variants` by index to the active banners.
+- `next/dynamic` with `ssr: false` lives in `ScrollHeroLoader.tsx`, a small Client Component. The server page remains composition-only; `HeroStatic` is the loading fallback and the reduced-motion render.
+- `next/image` uses `preload` only on the first hero part. `priority` is deprecated in this Next.js version and was not used.
+- The hero is `240vh` on mobile and `400vh` on desktop. Mobile filters out non-essential parts; reduced motion renders the assembled static case and skips GSAP/Lenis entirely.
+- GSAP timelines animate only transform/opacity. `will-change-transform` toggles only while a trigger is active; `ScrollTrigger` and Lenis are destroyed/reverted on unmount. Lenis is synced with `ScrollTrigger.update()` and `gsap.ticker`, with lag smoothing disabled while active.
+- `usePrefersReducedMotion()` uses `useSyncExternalStore`; it returns `false` during SSR and reads the real media query on the client without an effect-driven setState render.
+- Remote storage paths are resolved to public Supabase object URLs; remote image URLs are rendered with `unoptimized` and local paths use `next/image` optimization. All hrefs from content pass through `safeHref()`.
+- Newsletter signup is intentionally local-only for Phase 4: it acknowledges submission without persisting data. Wiring it to a Server Action and Zod schema is a later phase decision.
+- SEO metadata and Organization/WebSite JSON-LD come from `site_content` with typed fallbacks; JSON-LD is escaped by replacing `<` before injection.
+
+## Phase 4 verification
+
+- `pnpm check` and `pnpm build` pass. `/` is a static route with `1h` revalidate and `1d` expire from the cached public queries.
+- A browser smoke test confirmed the home page renders every ordered section from fallback/default data, the dynamic hero loads, and there are no console errors.
+- Automated scripted scrolling did not drive Lenis in the browser harness, so the scrubbed copy/part transitions were verified by code review rather than a scripted 60fps measurement.
+- Lighthouse on the local page reports accessibility `1`, SEO `1`, and no listed failures after fixing the inverted CTA heading contrast and the cart link accessible-name mismatch.
+- Lighthouse mobile performance and 60fps on a mid-range laptop remain unmeasured in this environment; no device emulation or representative hardware is available here.
+
 ## Open items for later phases
 
-- Replace `.gitkeep` placeholders with real feature code.
-- Add admin forms/actions that use `createAdminClient()` or verified admin claims for trusted mutations.
+- Add admin forms/actions that use `createAdminClient()` or verified admin claims for trusted mutations, including revalidating `CACHE_TAGS`.
 - Add the first real admin user with `pnpm admin:bootstrap` after `pnpm db:start`.
+- Replace the placeholder SVG artwork with the transparent WebP renders described in `docs/PLACEHOLDER-ART.md`.
+- Connect the newsletter form to a validated Server Action when the subscription data model exists.
+- Measure Lighthouse mobile performance and scroll smoothness on representative hardware, then tune if either target is missed.
 - Re-run the full local Supabase stack verification when a container runtime is available.
