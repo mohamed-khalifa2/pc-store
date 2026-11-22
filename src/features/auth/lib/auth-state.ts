@@ -16,10 +16,6 @@ export const initialAuthState: AuthState = {
   fieldErrors: {},
 };
 
-export function authErrorState(message: string, fieldErrors: AuthFieldErrors = {}): AuthState {
-  return { status: "error", message, fieldErrors };
-}
-
 export function authSuccessState(message: string): AuthState {
   return { status: "success", message, fieldErrors: {} };
 }

@@ -17,6 +17,3 @@ export const signupSchema = z.object({
     .min(8, { error: "Password must be at least 8 characters." })
     .max(128, { error: "Password must be 128 characters or fewer." }),
 });
-
-export type LoginInput = z.infer<typeof loginSchema>;
-export type SignupInput = z.infer<typeof signupSchema>;

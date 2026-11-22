@@ -14,19 +14,3 @@ export function formNumber(formData: FormData, key: string): number | null {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
 }
-
-export function formFiles(formData: FormData, key: string): File[] {
-  return formData
-    .getAll(key)
-    .filter((value): value is File => value instanceof File && value.size > 0);
-}
-
-export function formIndexedStrings(formData: FormData, prefix: string): string[] {
-  const values: string[] = [];
-  for (let index = 0; index < 100; index += 1) {
-    const value = formString(formData, `${prefix}${index}`);
-    if (!value) continue;
-    values.push(value);
-  }
-  return values;
-}

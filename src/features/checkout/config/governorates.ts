@@ -27,5 +27,3 @@ export const EGYPT_GOVERNORATES = [
   "Suez",
   "Sharqia",
 ] as const;
-
-export type EgyptGovernorate = (typeof EGYPT_GOVERNORATES)[number];

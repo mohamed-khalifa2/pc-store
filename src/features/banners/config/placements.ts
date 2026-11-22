@@ -5,8 +5,6 @@ export const BANNER_PLACEMENTS = {
   checkout: "checkout",
 } as const;
 
-export type BannerPlacement = (typeof BANNER_PLACEMENTS)[keyof typeof BANNER_PLACEMENTS];
-
 export const BANNER_PLACEMENT_OPTIONS = [
   { value: BANNER_PLACEMENTS.home, label: "Home page" },
   { value: BANNER_PLACEMENTS.category, label: "Category pages" },

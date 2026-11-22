@@ -13,5 +13,3 @@ export const categorySlugSchema = z
   .regex(/^[a-zA-Z0-9_-]+$/)
   .min(1)
   .max(200);
-
-export type CategoryDetailRow = z.infer<typeof categoryDetailRowSchema>;
