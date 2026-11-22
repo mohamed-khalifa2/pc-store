@@ -1,4 +1,4 @@
-export type HeroTransform = {
+type HeroTransform = {
   x: number;
   y: number;
   z: number;

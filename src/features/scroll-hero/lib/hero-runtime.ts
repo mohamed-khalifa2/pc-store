@@ -1,4 +1,4 @@
-export type HeroRuntimeListener = () => void;
+type HeroRuntimeListener = () => void;
 
 export type HeroRuntime = {
   progress: number;

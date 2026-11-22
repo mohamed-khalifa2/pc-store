@@ -13,6 +13,3 @@ export const detailProductRowSchema = productRowSchema.extend({
   sku: z.string().min(1),
   specs: productSpecsSchema,
 });
-
-export type ListedProductRow = z.infer<typeof listedProductRowSchema>;
-export type DetailProductRow = z.infer<typeof detailProductRowSchema>;

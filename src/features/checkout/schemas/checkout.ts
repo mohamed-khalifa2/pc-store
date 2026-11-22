@@ -23,9 +23,7 @@ export const checkoutFormSchema = checkoutShippingSchema.extend({
   ] as const),
 });
 
-export type CheckoutShippingValues = z.infer<typeof checkoutShippingSchema>;
 export type CheckoutFormValues = z.infer<typeof checkoutFormSchema>;
-export type PaymentProviderId = CheckoutFormValues["paymentProvider"];
 
 export function parseCartInput(value: string): CartItem[] | null {
   try {
