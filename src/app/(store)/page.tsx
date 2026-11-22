@@ -12,9 +12,16 @@ import { getHomePageData } from "@/features/home/queries/get-home-page-data";
 export async function generateMetadata(): Promise<Metadata> {
   const content = await getSiteContent();
 
+  const genericTitle = getSiteText(content, SITE_CONTENT_KEYS.seoTitle, SITE_NAME);
+  const genericDescription = getSiteText(
+    content,
+    SITE_CONTENT_KEYS.seoDescription,
+    SITE_DESCRIPTION,
+  );
+
   return {
-    title: getSiteText(content, SITE_CONTENT_KEYS.homeTitle, SITE_NAME),
-    description: getSiteText(content, SITE_CONTENT_KEYS.description, SITE_DESCRIPTION),
+    title: getSiteText(content, SITE_CONTENT_KEYS.homeTitle, genericTitle),
+    description: getSiteText(content, SITE_CONTENT_KEYS.description, genericDescription),
   };
 }
 
@@ -31,6 +38,7 @@ export default async function HomePage() {
           banners={data.banners}
           categories={data.categories}
           products={data.products}
+          content={data.content}
         />
       ))}
     </>

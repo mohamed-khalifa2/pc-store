@@ -1,6 +1,6 @@
 import type { ProductCardData } from "@/features/products/types";
 
-const DEFAULT_PRODUCT_IMAGE = "/images/products/generic.svg";
+export const DEFAULT_PRODUCT_IMAGE = "/images/products/generic.svg";
 
 export const DEFAULT_PRODUCTS: readonly ProductCardData[] = [
   {

@@ -1,31 +1,42 @@
 "use client";
 
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
+import { useWebGLSupport } from "@/hooks/use-webgl-support";
 
 import { HeroCopy } from "@/features/scroll-hero/components/HeroCopy";
-import { HeroStage } from "@/features/scroll-hero/components/HeroStage";
+import { HeroModelStage } from "@/features/scroll-hero/components/HeroModelStage";
 import { HeroStatic } from "@/features/scroll-hero/components/HeroStatic";
 import { SmoothScrollProvider } from "@/features/scroll-hero/components/SmoothScrollProvider";
+import { HERO_STEPS, type HeroStep } from "@/features/scroll-hero/config/steps";
 import { useHeroTimeline } from "@/features/scroll-hero/hooks/useHeroTimeline";
+import { createHeroRuntime } from "@/features/scroll-hero/lib/hero-runtime";
 
 type ScrollHeroProps = {
   title?: string | null;
   subtitle?: string | null;
+  steps?: readonly HeroStep[];
 };
 
-export function ScrollHero({ title, subtitle }: ScrollHeroProps) {
+export function ScrollHero({ title, subtitle, steps = HERO_STEPS }: ScrollHeroProps) {
   const reducedMotion = usePrefersReducedMotion();
+  const webGLAvailable = useWebGLSupport();
   const rootRef = useRef<HTMLElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
+  const runtime = useMemo(() => createHeroRuntime(), []);
 
-  useHeroTimeline({ rootRef, stageRef, enabled: !reducedMotion });
+  useHeroTimeline({
+    rootRef,
+    stageRef,
+    runtime,
+    enabled: !reducedMotion && webGLAvailable,
+  });
 
-  if (reducedMotion) {
+  if (reducedMotion || !webGLAvailable) {
     return (
       <section aria-label="PC case overview">
-        <HeroStatic title={title} subtitle={subtitle} />
+        <HeroStatic title={title} subtitle={subtitle} steps={steps} />
       </section>
     );
   }
@@ -38,8 +49,8 @@ export function ScrollHero({ title, subtitle }: ScrollHeroProps) {
     >
       <SmoothScrollProvider />
       <div ref={stageRef} className="relative h-screen overflow-hidden">
-        <HeroStage preloadFirstPart />
-        <HeroCopy subtitle={subtitle} />
+        <HeroModelStage runtime={runtime} />
+        <HeroCopy steps={steps} subtitle={subtitle} />
       </div>
     </section>
   );

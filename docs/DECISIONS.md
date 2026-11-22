@@ -136,3 +136,90 @@ Official docs were checked before implementation. Direct fetches to `supabase.co
 - Connect the newsletter form to a validated Server Action when the subscription data model exists.
 - Measure Lighthouse mobile performance and scroll smoothness on representative hardware, then tune if either target is missed.
 - Re-run the full local Supabase stack verification when a container runtime is available.
+
+## Phase 5 decisions
+
+- Versions and conventions are unchanged from the confirmed table above (Next.js 16.4.6, React 19.3.1, Supabase JS 2.119.2 / SSR 0.12.7, Zod 4.6.7, Tailwind 4.3.5). Phase 5 re-read the bundled Next.js 16 guides for Server Actions/forms, Route Handlers, and revalidation before implementing.
+- Server-side identity still uses `getClaims()` through `requireUser()`; checkout and order pages redirect anonymous users to `/login`. Order queries use the cookie client so RLS limits rows to the owner or an admin.
+- `placeOrder` is a Server Action using React 19 `useActionState`. Raw `FormData` is parsed with Zod, cart JSON is re-parsed with the cart schema, and prices/stock are re-read with the uncached `getProductsByIds()` query. Client prices are never accepted.
+- Totals are computed in integer piasters from server prices; the RPC independently derives line prices from `public.products` and returns the authoritative total. Out-of-stock, unknown, and duplicate lines are rejected before the RPC call.
+- Invalidation follows the Next.js 16 rules: `revalidateTag(CACHE_TAGS.products, "max")` for catalog data and `updateTag(CACHE_TAGS.orders)` for read-your-own-writes in a Server Action.
+- **Local RPC type caveat:** generated Supabase types cannot be regenerated without a container runtime here. The checkout RPC call uses a narrow local structural contract in `features/checkout/lib/place-order-rpc.ts`, validated with Zod. Rerun `pnpm db:types` when Docker is available and replace that contract with the generated `Functions.place_order` type.
+- The PayMob adapter is an explicit stub: it reads `PAYMOB_API_KEY`, `PAYMOB_SECRET_KEY`, and `PAYMOB_INTEGRATION_ID` only through `getEnv()` on the server, reports itself unavailable, and throws a TODO error if invoked. COD is the only enabled provider and never redirects.
+- The PayMob webhook is a `POST`-only Route Handler. It verifies a raw-body HMAC-SHA256 signature from `x-paymob-signature` with Web Crypto and a constant-time comparison before Zod validation; reconciliation is left as a documented TODO.
+- Order routes are `noindex, nofollow` and wrap session readers in `<Suspense>` because Cache Components is enabled. After a successful order, the client clears the cart before navigating to the confirmation page.
+- **Integration assumption:** checkout reads cart lines through `features/checkout/hooks/use-checkout-cart.ts`, which expects `useCartStore` from `features/cart/store/cart-store` to expose an `items` array and `useCartHydrated()` to report localStorage hydration. If the cart track names those exports differently, only this one adapter file needs changing. The cart summary comes from a checkout-only Server Action rather than `features/cart/actions/get-cart-details.ts` so this phase does not edit cart files and can surface stock/duplicate errors before placing an order.
+- All server Supabase clients use a shared fetch wrapper with a 5-second timeout (`SUPABASE_REQUEST_TIMEOUT_MS`). Public reads fall back to typed local defaults when the remote database is unreachable, so pages stream instead of hanging. Checkout still sends only product IDs and quantities; prices are re-read from the server and the RPC remains the authoritative source. Cart hydration uses `useSyncExternalStore` rather than an effect-driven `setState`.
+- **Integration fixes:** the category fallback now includes `parentId` and `sortOrder` so detail queries satisfy `CategoryDetailData`; `ShippingFields` imports `CheckoutFieldErrors` from its owning module; `CheckoutSummary` tracks the resolved cart key instead of setting state synchronously in an effect; URL `page` values are coerced with Zod.
+
+## Phase 5 verification
+
+- `pnpm check` and `pnpm build` pass after all integration fixes.
+- Focused production-browser smoke test on `http://localhost:3002`: the catalog rendered from streamed Suspense content; URL filters (`category=cpus&q=ryzen&sort=price-asc&inStock=on&min=10000&max=20000&page=1`) reduced the list to one product; an impossible search rendered the true empty state; product detail showed price, stock, specs table, and JSON-LD; add-to-cart opened the drawer with a server-priced line; `localStorage` contained only `{ productId, quantity }`; the cart page showed the same line and subtotal; anonymous checkout redirected to `/login?next=/checkout`; an invalid product slug rendered the not-found state.
+- The PayMob webhook returned `401` for a bad signature and `405` for `GET`, as designed.
+- **Still blocked:** the configured remote Supabase project responds, but `public.products` is absent from its schema cache and public signup is rate-limited. With no migrated local stack (Docker/Podman/WSL unavailable), the authenticated COD order path, `/orders` list, stock decrement, atomic rollback, generated `Functions.place_order` types, and `pnpm db:reset` could not be verified end to end. Run `pnpm db:start && pnpm db:reset && pnpm db:types` where a container runtime is available, then repeat the checkout/orders smoke test before closing this phase.
+
+## Phase 6 verified conventions (2026-11-20)
+
+- Repo versions were re-confirmed against the npm registry and the existing Phase 1 table: Next.js `16.4.6`, Supabase JS `2.119.2`, React `19.3.1`, Tailwind CSS `4.3.5`, Zod `4.6.7`. No package upgrade is required for this phase.
+- Next.js 16 bundled guides were re-read before implementation:
+  - Server Actions are public POST endpoints, so every admin action calls `requireAdmin()` before parsing input and never trusts row contents supplied by the client.
+  - `revalidateTag(tag, "max")` remains the recommended stale-while-revalidate form; admin pages use `updateTag()` where read-your-own-writes are required and `revalidateTag()` for public content.
+  - Server Actions have a default 1 MB body limit. Multi-image uploads require a deliberate `serverActions.bodySizeLimit` increase in `next.config.ts`; Storage bucket limits remain the authoritative per-file constraint.
+  - `export const metadata = { robots: { index: false, follow: false } }` is the supported way to mark the admin route tree `noindex`.
+  - `middleware.ts` remains renamed to `proxy.ts` in Next.js 16; the existing `src/proxy.ts` is retained.
+- Supabase Storage docs were re-read: `.upload(path, body, { upsert: false, contentType })` stores at a path, `.remove([path])` deletes by path, and `.getPublicUrl(path)` derives a URL from a stored path. Admin code stores only bucket-relative paths in Postgres and treats replace/delete as two-step upload-then-write operations with cleanup on failure.
+- Official references checked: bundled `node_modules/next/dist/docs/01-app/{02-guides/server-actions.md,02-guides/forms.md,02-guides/data-security.md,02-guides/authentication.md,03-api-reference/04-functions/revalidateTag.md,03-api-reference/04-functions/generate-metadata.md}`, Supabase Storage `upload`/`remove`/`getPublicUrl`, Supabase SSR/API-key guides, Tailwind theme docs, and npm registry `latest` metadata.
+
+## Phase 6 implementation decisions
+
+- Admin mutations use the checkout-style `{ ok, error, fieldErrors, data? }` contract from `features/admin/lib/action-result`. `error` intentionally carries the user-facing success or failure message so one toast component can render both cases.
+- `requireAdmin()` is always the first statement in an admin Server Action, before parsing or coercing any client input. Admin reads use `createAdminClient()` only after the layout/page guard, never the public cached client.
+- `revalidatePublic()` calls `revalidateTag(tag, "max")` for cached storefront reads. `refreshAdminTag()` uses `updateTag()` for admin read-your-own-writes; `refreshAndRevalidate()` composes both.
+- ImageUploader uploads files through a dedicated guarded Server Action before the parent form submits. Forms persist only bucket-relative storage paths; replace/delete actions remove stale objects with `.remove([...paths])` after the database write succeeds.
+- `next.config.ts` sets `experimental.serverActions.bodySizeLimit` to `12mb` for multi-image forms. Per-file MIME and 5 MB checks remain in `features/admin/lib/storage.ts` and Storage bucket policies.
+- Banners gained optional `mobile_image_path` and a `placement` enum via a forward-only migration: `202611200016_add_banner_admin_fields.sql`. Public banners are filtered by placement as well as RLS publication rules, and `Banner` now carries a separate `mobileImageUrl`.
+- Hero and scroll-step copy is editable through new `site_content` keys. `getHeroSteps()` overlays those values on the static step config so the existing GSAP timeline and reduced-motion fallback do not branch on admin state.
+- New admin screens are `noindex, nofollow` through the existing admin layout metadata. All admin routes stay behind the proxy, `requireAdmin()`, and RLS/admin-client boundaries.
+- Storage validation is bucket-aware: product/banner uploads allow WebP, AVIF, JPEG, and PNG up to 5 MB; site-asset uploads additionally allow SVG up to 2 MB. The same limits are enforced in the uploader UI, the Server Action, and Storage policies.
+- Overview “today” metrics use a UTC day boundary. `datetime-local` admin inputs are converted to ISO strings on submit and back to local input values when editing.
+- New home sections start at `sort_order = 1000` and are repositioned with the shared sortable list. Section `body` JSON is intentionally not exposed in the form; only validated `config` fields are edited.
+- Order status is the only mutable order field. Invoice printing uses Tailwind `print:` utilities and a fixed white overlay because the print route inherits the shared admin shell.
+- Next.js 16 removed `export const dynamic = "force-dynamic"` when `cacheComponents` is enabled. Admin routes rely on the session read in the guarded layout under `<Suspense>`; no admin data is prerendered into the static shell. The proxy also sets `private, no-store` response headers for `/admin` requests and redirects.
+
+## Phase 6 verification
+
+- `pnpm check` and `pnpm build` pass after integrating all seven screens.
+- Build route table shows every `/admin/*` route as Partial Prerender with dynamic server-streamed content; no admin route has a public revalidate/expire window.
+- Static audit confirmed all 14 admin Server Action exports call `requireAdmin()` before parsing client input, and every `createAdminClient()` admin query also calls `requireAdmin()`.
+- Admin route tree inherits `robots: { index: false, follow: false }` from `src/app/admin/layout.tsx`; product pages repeat it explicitly.
+- `src/lib/supabase/types.ts` was synced locally with the banner migration columns (`mobile_image_path`, `placement`) because no container runtime is available to regenerate types. `Functions.place_order` remains a Phase 5 local contract.
+- **Still blocked:** as in Phase 5, no migrated local Supabase stack and no usable remote schema are available here, so DB-backed smoke tests for all seven screens, storage replace/delete, cache revalidation, and crafted non-admin action requests remain manual. Run `pnpm db:start && pnpm db:reset && pnpm db:types`, then repeat those checks before considering the phase fully accepted.
+
+## Phase 7 verified conventions (2026-11-21)
+
+- Confirmed current stable package versions from npm metadata: `three@0.187.0`, `@react-three/fiber@9.8.2`, `meshoptimizer@1.3.0`, `@types/three@0.187.0`, and `@gltf-transform/cli@4.5.1`. React 19.3.1, Next.js 16.4.6, Tailwind 4.3.5, and Zod 4.6.7 remain unchanged.
+- Official references re-read for this phase: R3F hooks and performance/pitfalls docs, glTF Transform CLI docs for `optimize`, `resize`, `webp`, and `meshopt`, and the bundled Next.js 16 lazy-loading guide. `@react-three/drei` was deliberately not added; only the smallest required loader/runtime pieces are used.
+- The existing `next/dynamic` boundary around `ScrollHero` remains the lazy boundary for all R3F/Three code. GLBs are loaded only after that chunk mounts and WebGL support is confirmed; the SVG `HeroStatic` hero stays as the loading, reduced-motion, and no-WebGL fallback.
+
+## Phase 7 implementation decisions
+
+- Original GLBs under `public/images/hero/parts/` are untouched. `pnpm models:optimize` runs `scripts/optimize-hero-models.mjs`, which writes reproducible optimized copies to `public/models/` with Meshopt geometry, WebP textures, capped texture sizes, and per-part simplification ratios. Total payload dropped from about 99 MB to about 8.4 MB (case 810 KB, CPU 1.67 MB, GPU 317 KB, motherboard 6.11 MB, RAM 440 KB, SSD 36 KB).
+- `EXT_meshopt_compression` is decoded with `MeshoptDecoder` from `meshoptimizer/decoder`, configured once through the R3F `useLoader` extension callback. No Draco decoder or extra asset is fetched.
+- Source models use incompatible units and orientations, so `lib/normalize-model.ts` centers each scene and fits it to a configured source-space size before a per-part base rotation. The case is rendered translucent so internal parts remain legible in the assembled state.
+- Scroll progress is written from GSAP `ScrollTrigger.onUpdate`/`onRefresh` into a mutable `HeroRuntime` object; no React state is set in frame or event loops. Subscribers (the R3F renderer) are invalidated only when progress or clamped rotation actually changes.
+- Explosion is a reversible scrub: progress 0 is assembled, progress 1 is exploded, and scrolling back returns the exact same transform set. Part positions and the whole-assembly rotation are mutated directly in `useFrame`.
+- Drag and arrow keys rotate the entire assembly with clamped X/Y limits; there is no free drag, pan, or zoom. `touch-pan-y` preserves vertical touch scrolling. The stage is focusable and exposes the interaction to assistive technology.
+- Rendering uses `frameloop="demand"` with DPR capped to `[1, 1.5]`. An IntersectionObserver and `visibilitychange` switch the frameloop to `never` when the hero is offscreen or the tab is hidden, and invalidate once when it resumes.
+- `HeroCopy` and the original GSAP/Lenis integration are preserved; only the old SVG part-tween timeline was removed. Admin and Phase 6 files were left untouched.
+- A DOM-level `<Suspense>` boundary wraps `<Canvas>` itself, with `HeroStage` as its fallback. A Suspense boundary only inside the R3F tree lets the nearest outer boundary hide the canvas while GLBs load; that unmounts the WebGL root and leaves it inactive after loading, producing a blank canvas after the SVG fallback disappears.
+
+## Phase 7 verification
+
+- `pnpm check` and `pnpm build` pass after adding the 3D hero, dependencies, optimization script, and generated GLBs.
+- Production-browser smoke test on `http://localhost:3300`: all six optimized GLBs loaded with HTTP 200, the WebGL canvas mounted, and no console errors were reported.
+- Pixel-signature comparison at scroll 0 → 800 → 0 returned the exact same assembled signature before and after the round trip, while the mid-scroll signature differed, confirming reversible scrubbed explosion.
+- Repeated pointer drags converged to a stable signature after reaching the clamp, so the rotation limit holds. Keyboard arrow rotation and the focusable drag region are present.
+- Final production smoke test on `http://localhost:3500` mounted one WebGL canvas and the focusable drag group with no console errors. Lighthouse reported accessibility `1`, best practices `1`, SEO `1`, and no listed failures.
+- Local-run follow-up: after the SVG fallback disappeared, the canvas was blank because the R3F root was left inactive when its loader suspended past the canvas. Moving the Suspense boundary outside `<Canvas>` fixed it; a headless production capture now shows the assembled case in the hero region where the pre-fix capture was blank.
+- Lighthouse mobile performance and a true 60fps measurement on representative hardware remain unmeasured in this environment, as in earlier phases.

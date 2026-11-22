@@ -147,3 +147,25 @@ pnpm admin:bootstrap admin@example.com
 ```
 
 The script uses `SUPABASE_SECRET_KEY` server-side and sets `app_metadata.role = "admin"`. It preserves any existing `app_metadata` keys.
+
+## Order placement RPC
+
+Migration `202611200015_create_place_order_rpc.sql` adds `public.place_order(p_user_id uuid, p_items jsonb, p_shipping_address jsonb, p_customer_email text, p_customer_phone text)`, returning a single JSON object `{ order_id, order_number, total_egp }`.
+
+- The function is `security definer`, sets `search_path = ''`, and fully qualifies `auth.users`, `public.products`, `public.orders`, and `public.order_items`.
+- `p_items` is an array of `{ product_id, quantity }` only. Client-supplied prices, names, and SKUs are ignored; the RPC derives `unit_price_egp`, `product_name`, `sku`, and `selected_specs` from locked product rows.
+- Products are locked with `FOR UPDATE` in product-ID order. The RPC rejects unpublished/unavailable products and any line whose stock is below the requested quantity, then decrements stock with `stock >= quantity` as a second guard.
+- The order header is inserted with the default `pending` status and a unique generated number (`PC-<UTC date>-<random hex>`). Line items and the final total are inserted/updated in the same transaction, so stock and order rows commit atomically.
+- `execute` is revoked from `public`, `anon`, and `authenticated` and granted only to `service_role`; the checkout Server Action calls it through `createAdminClient()` after `requireUser()`.
+- Generated types cannot be regenerated in this environment, so `features/checkout/lib/place-order-rpc.ts` validates the response with a narrow local Zod schema. Rerun `pnpm db:types` with Docker available and switch to the generated `Functions.place_order` contract.
+- Checkout stores the delivery snapshot under the keys in `features/checkout/config/shipping-keys.ts`; `features/orders/schemas/order.ts` parses the same snapshot when rendering order history.
+
+## Phase 6 editing model
+
+- `/admin/banners` edits all banner rows, not only the active/public subset. `mobile_image_path` is optional and falls back to the desktop image at render time. `placement` selects which storefront surface receives the banner.
+- `/admin/content` edits `home_sections` directly, including unpublished drafts and `sort_order`. It also edits hero and scroll-step copy through `site_content`; `getHeroSteps()` overlays those strings on the static step config.
+- `/admin/settings` edits global `site_content` values: site identity, contact/shipping copy, footer/social links, and SEO metadata.
+- `/admin/products` edits products, specs, publication state, featured state, and ordered product images. It reuses the catalog cache tag so the public catalog and home page refresh together.
+- `/admin/categories` edits taxonomy, ordering, publication, and category artwork. Deletes preserve order history because `order_items.product_id` uses `set null`.
+- `/admin/orders` is read-only except for `status`. Order rows remain immutable snapshots for totals, addresses, and line items.
+- All Storage-backed fields store bucket-relative paths. Public queries resolve those paths with `resolveAssetUrl()`; admin actions validate MIME type and file size before upload and delete replaced objects by path.

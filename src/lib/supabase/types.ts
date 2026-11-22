@@ -65,7 +65,9 @@ export type Database = {
           id: string;
           image_path: string;
           is_active: boolean;
+          mobile_image_path: string | null;
           name: string;
+          placement: string;
           published_at: string | null;
           sort_order: number;
           starts_at: string | null;
@@ -82,7 +84,9 @@ export type Database = {
           id?: string;
           image_path: string;
           is_active?: boolean;
+          mobile_image_path?: string | null;
           name: string;
+          placement?: string;
           published_at?: string | null;
           sort_order?: number;
           starts_at?: string | null;
@@ -98,7 +102,9 @@ export type Database = {
           id?: string;
           image_path?: string;
           is_active?: boolean;
+          mobile_image_path?: string | null;
           name?: string;
+          placement?: string;
           published_at?: string | null;
           sort_order?: number;
           starts_at?: string | null;

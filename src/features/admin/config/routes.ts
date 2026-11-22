@@ -1,0 +1,17 @@
+export const ADMIN_ROUTES = {
+  overview: "/admin",
+  banners: "/admin/banners",
+  bannerNew: "/admin/banners/new",
+  banner: (id: string) => `/admin/banners/${id}`,
+  content: "/admin/content",
+  products: "/admin/products",
+  productNew: "/admin/products/new",
+  product: (id: string) => `/admin/products/${id}`,
+  categories: "/admin/categories",
+  categoryNew: "/admin/categories/new",
+  category: (id: string) => `/admin/categories/${id}`,
+  orders: "/admin/orders",
+  order: (id: string) => `/admin/orders/${id}`,
+  orderPrint: (id: string) => `/admin/orders/${id}/print`,
+  settings: "/admin/settings",
+} as const;

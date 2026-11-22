@@ -3,17 +3,18 @@ import { Heading } from "@/components/ui/Heading";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { ROUTES } from "@/lib/constants";
 
-import { HERO_STEPS } from "@/features/scroll-hero/config/steps";
+import { HERO_STEPS, type HeroStep } from "@/features/scroll-hero/config/steps";
 import { HeroStage } from "@/features/scroll-hero/components/HeroStage";
 
 type HeroStaticProps = {
   title?: string | null;
   subtitle?: string | null;
+  steps?: readonly HeroStep[];
 };
 
-export function HeroStatic({ title, subtitle }: HeroStaticProps) {
-  const firstStep = HERO_STEPS[0];
-  const lastStep = HERO_STEPS[HERO_STEPS.length - 1];
+export function HeroStatic({ title, subtitle, steps = HERO_STEPS }: HeroStaticProps) {
+  const firstStep = steps[0]!;
+  const lastStep = steps[steps.length - 1]!;
   const headline = `${firstStep.title} ${firstStep.accent}`;
 
   return (

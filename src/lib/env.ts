@@ -13,6 +13,9 @@ const publicEnvSchema = z.object({
 const envSchema = publicEnvSchema.extend({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   SUPABASE_SECRET_KEY: z.string().startsWith("sb_secret_"),
+  PAYMOB_API_KEY: z.string().min(1).optional(),
+  PAYMOB_SECRET_KEY: z.string().min(1).optional(),
+  PAYMOB_INTEGRATION_ID: z.string().min(1).optional(),
 });
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;

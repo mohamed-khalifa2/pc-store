@@ -2,21 +2,17 @@
 
 import { useEffect, type RefObject } from "react";
 
-import { HERO_PARTS, type HeroTransform } from "@/features/scroll-hero/config/parts";
 import { HERO_STEPS } from "@/features/scroll-hero/config/steps";
+import type { HeroRuntime } from "@/features/scroll-hero/lib/hero-runtime";
 
 type HeroTimelineOptions = {
   rootRef: RefObject<HTMLElement | null>;
   stageRef: RefObject<HTMLElement | null>;
+  runtime: HeroRuntime;
   enabled: boolean;
 };
 
-function toGsapVars(transform: HeroTransform) {
-  const { opacity, ...rest } = transform;
-  return { ...rest, autoAlpha: opacity };
-}
-
-export function useHeroTimeline({ rootRef, stageRef, enabled }: HeroTimelineOptions) {
+export function useHeroTimeline({ rootRef, stageRef, runtime, enabled }: HeroTimelineOptions) {
   useEffect(() => {
     const root = rootRef.current;
     const stage = stageRef.current;
@@ -34,7 +30,7 @@ export function useHeroTimeline({ rootRef, stageRef, enabled }: HeroTimelineOpti
       if (disposed) return;
       gsap.registerPlugin(ScrollTrigger);
 
-      const buildTimeline = (isMobile: boolean) => {
+      const buildTimeline = () => {
         const timeline = gsap.timeline({
           defaults: { ease: "none" },
           scrollTrigger: {
@@ -45,33 +41,12 @@ export function useHeroTimeline({ rootRef, stageRef, enabled }: HeroTimelineOpti
             scrub: true,
             anticipatePin: 1,
             invalidateOnRefresh: true,
-            onToggle: (self) => {
-              stage.querySelectorAll("[data-hero-part]").forEach((element) => {
-                element.classList.toggle("will-change-transform", self.isActive);
-              });
-            },
+            onUpdate: (self) => runtime.setProgress(self.progress),
+            onRefresh: (self) => runtime.setProgress(self.progress),
           },
         });
 
         timeline.to({}, { duration: 1 }, 0);
-
-        HERO_PARTS.filter((part) => !isMobile || part.mobile).forEach((part) => {
-          const element = stage.querySelector<HTMLElement>(`[data-hero-part="${part.id}"]`);
-          if (!element) return;
-
-          gsap.set(element, { x: 0, y: 0, z: 0, rotation: 0, scale: 1, autoAlpha: 1 });
-          const [explodeStart, explodeEnd] = part.range;
-          timeline
-            .to(element, { ...toGsapVars(part.start), duration: Math.max(explodeStart, 0.01) }, 0)
-            .to(
-              element,
-              {
-                ...toGsapVars(part.end),
-                duration: Math.max(explodeEnd - explodeStart, 0.01),
-              },
-              explodeStart,
-            );
-        });
 
         HERO_STEPS.forEach((step, index) => {
           const element = stage.querySelector<HTMLElement>(`[data-hero-step="${step.id}"]`);
@@ -99,18 +74,13 @@ export function useHeroTimeline({ rootRef, stageRef, enabled }: HeroTimelineOpti
         };
       };
 
-      const media = gsap.matchMedia();
-      media.add("(min-width: 768px)", () => buildTimeline(false));
-      media.add("(max-width: 767px)", () => buildTimeline(true));
-      revertMatchMedia = () => media.revert();
+      revertMatchMedia = buildTimeline();
     })();
 
     return () => {
       disposed = true;
       revertMatchMedia?.();
-      stage.querySelectorAll("[data-hero-part]").forEach((element) => {
-        element.classList.remove("will-change-transform");
-      });
+      runtime.setProgress(0);
     };
-  }, [enabled, rootRef, stageRef]);
+  }, [enabled, rootRef, runtime, stageRef]);
 }

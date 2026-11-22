@@ -42,7 +42,17 @@ export function ParallaxBanner({
           placeholder="blur"
           blurDataURL={BLUR_PLACEHOLDER}
           unoptimized={isRemoteUrl(banner.imageUrl)}
-          className="object-cover"
+          className="hidden object-cover sm:block"
+        />
+        <Image
+          src={banner.mobileImageUrl ?? banner.imageUrl}
+          alt=""
+          fill
+          sizes="100vw"
+          placeholder="blur"
+          blurDataURL={BLUR_PLACEHOLDER}
+          unoptimized={isRemoteUrl(banner.mobileImageUrl ?? banner.imageUrl)}
+          className="object-cover sm:hidden"
         />
       </div>
       <div

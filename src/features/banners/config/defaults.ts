@@ -11,6 +11,7 @@ export const DEFAULT_BANNERS: readonly Banner[] = [
     ctaLabel: "Shop bundles",
     ctaHref: ROUTES.products,
     imageUrl: "/images/banners/build-week.svg",
+    mobileImageUrl: "/images/banners/build-week.svg",
     variant: "full",
   },
   {
@@ -21,6 +22,7 @@ export const DEFAULT_BANNERS: readonly Banner[] = [
     ctaLabel: "Browse GPUs",
     ctaHref: ROUTES.category("graphics-cards"),
     imageUrl: "/images/banners/gpu-drop.svg",
+    mobileImageUrl: "/images/banners/gpu-drop.svg",
     variant: "split",
   },
   {
@@ -31,6 +33,7 @@ export const DEFAULT_BANNERS: readonly Banner[] = [
     ctaLabel: "Browse categories",
     ctaHref: ROUTES.categories,
     imageUrl: "/images/banners/category-strip.svg",
+    mobileImageUrl: "/images/banners/category-strip.svg",
     variant: "strip",
   },
 ] as const;

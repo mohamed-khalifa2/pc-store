@@ -12,12 +12,14 @@ import { FeaturedProductsSection } from "@/features/home/sections/FeaturedProduc
 import { WhyUsSection } from "@/features/home/sections/WhyUsSection";
 import type { HomeSection } from "@/features/home/types";
 import type { ProductCardData } from "@/features/products/types";
+import type { SiteContent } from "@/features/site-content/types";
 
 type HomeSectionRendererProps = {
   section: HomeSection;
   banners: Banner[];
   categories: CategoryCardData[];
   products: ProductCardData[];
+  content: SiteContent;
 };
 
 export function HomeSectionRenderer({
@@ -25,10 +27,11 @@ export function HomeSectionRenderer({
   banners,
   categories,
   products,
+  content,
 }: HomeSectionRendererProps) {
   switch (section.kind) {
     case HOME_SECTION_KIND.hero:
-      return <HomeHeroSection section={section} />;
+      return <HomeHeroSection section={section} content={content} />;
     case HOME_SECTION_KIND.marquee:
       return <BrandMarquee section={section} />;
     case HOME_SECTION_KIND.banners:

@@ -52,4 +52,43 @@ export const NAV_LABELS = {
   cart: "Cart",
 } as const;
 
+export const SUPABASE_REQUEST_TIMEOUT_MS = 5000;
+
 export const CART_COUNT_PLACEHOLDER = 0;
+
+export const CART_MAX_QUANTITY = 99;
+export const CART_MAX_ITEMS = 50;
+export const PRODUCTS_PER_PAGE = 12;
+export const RELATED_PRODUCTS_LIMIT = 4;
+
+export const PAYMENT_PROVIDERS = {
+  cod: "cod",
+  paymob: "paymob",
+} as const;
+
+export type PaymentProviderId = (typeof PAYMENT_PROVIDERS)[keyof typeof PAYMENT_PROVIDERS];
+
+export const ORDER_STATUS_LABELS = {
+  pending: "Pending",
+  paid: "Paid",
+  processing: "Processing",
+  shipped: "Shipped",
+  delivered: "Delivered",
+  cancelled: "Cancelled",
+  refunded: "Refunded",
+} as const;
+
+export const CHECKOUT_FIELDS = {
+  fullName: "fullName",
+  phone: "phone",
+  governorate: "governorate",
+  city: "city",
+  address: "address",
+  notes: "notes",
+  items: "items",
+  paymentProvider: "paymentProvider",
+} as const;
+
+export const PAYMOB_HEADERS = {
+  signature: "x-paymob-signature",
+} as const;

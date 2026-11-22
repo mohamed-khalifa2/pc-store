@@ -24,6 +24,12 @@ function isAdminRoute(pathname: string): boolean {
   return pathname === ADMIN_PATH_PREFIX || pathname.startsWith(`${ADMIN_PATH_PREFIX}/`);
 }
 
+function applyNoStoreHeaders(response: NextResponse): void {
+  response.headers.set("cache-control", "private, no-store, max-age=0, must-revalidate");
+  response.headers.set("pragma", "no-cache");
+  response.headers.set("expires", "0");
+}
+
 export async function updateSession(request: NextRequest): Promise<NextResponse> {
   const env = getEnv();
   let supabaseResponse = NextResponse.next({ request });
@@ -69,8 +75,11 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
 
     const redirectResponse = NextResponse.redirect(redirectUrl);
     copyResponseState(supabaseResponse, redirectResponse);
+    applyNoStoreHeaders(redirectResponse);
     return redirectResponse;
   }
+
+  if (isAdminRoute(request.nextUrl.pathname)) applyNoStoreHeaders(supabaseResponse);
 
   return supabaseResponse;
 }

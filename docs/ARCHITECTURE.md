@@ -112,3 +112,54 @@ pnpm admin:bootstrap <email>
 ```
 
 `pnpm db:*` requires a container runtime. See `docs/DECISIONS.md` for the temporary embedded-Postgres verification used in this environment.
+
+## Phase 5 additions
+
+### Routes
+
+- `src/app/(store)/checkout/page.tsx`: composition-only checkout page with a Suspense boundary around the authenticated form container. Metadata is `noindex`.
+- `src/app/(store)/orders/[id]/page.tsx`: awaits async `params`, streams `OrderDetail` inside Suspense, and is `noindex`. `orders/loading.tsx` supplies the route-level fallback.
+- `src/app/api/payments/paymob/route.ts`: POST-only webhook skeleton. It verifies the HMAC signature before parsing/validating JSON and returns 401/400 on failure; reconciliation is a TODO.
+
+### Features
+
+- `features/checkout/config/`: governorate choices, copy, shipping JSON keys, payment option display config, and payment copy.
+- `features/checkout/schemas/checkout.ts`: Zod validation for shipping fields, cart JSON, and payment provider.
+- `features/checkout/lib/`: checkout state/field errors, form-data helpers, piaster-based pricing, and the narrow RPC contract.
+- `features/checkout/actions/`: `placeOrder` mutation and a checkout-only cart summary action; both re-read current catalog data on the server.
+- `features/checkout/payments/`: provider interface, COD implementation, PayMob stub with env-only config, registry, and Web Crypto signature verification.
+- `features/orders/queries/`: cookie-client reads for the current customer's order list and one order with its line items; both validate rows with Zod.
+- `features/orders/schemas/`, `types.ts`, `config/`, `lib/`: typed order shapes, status labels, copy, and date formatting.
+- `features/orders/components/`: real order list, status badge, detail sections, and skeletons. `MyOrders` no longer shows a placeholder.
+- `features/checkout/hooks/use-checkout-cart.ts` is the single adapter to the cart store; it also uses `useCartHydrated()` so the empty-cart state is not shown before localStorage restores. Changing cart-store export names should be handled there.
+
+### Security and data flow
+
+- Checkout validates the user with `requireUser()` and writes through the server-only `createAdminClient()` RPC. The RPC accepts product IDs and quantities only; all prices, names, SKUs, and specs come from `public.products`.
+- `place_order` is `security definer`, uses `search_path = ''`, locks product rows `FOR UPDATE`, and is executable only by `service_role`.
+- Customer order reads stay on the cookie-based Supabase client, so the existing owner-or-admin RLS policies apply.
+- `revalidateTag(CACHE_TAGS.products, "max")` refreshes catalog caches after a purchase; `updateTag(CACHE_TAGS.orders)` gives immediate order visibility.
+- `SUPABASE_SECRET_KEY` and PayMob secrets are read only in server code; no secret or hardcoded API key reaches a Client Component.
+
+## Phase 6 additions
+
+### Routes
+
+- `src/app/admin/layout.tsx` remains `noindex, nofollow` and wraps the verified-admin guard, responsive shell, and routed screens in Suspense.
+- Admin screens live under `overview`, `banners`, `content`, `products`, `categories`, `orders`, and `settings`, with route-level `loading.tsx` and `error.tsx` files where data is read.
+- Printable order invoices are separate admin routes and also inherit the noindex admin layout.
+
+### Features
+
+- `features/admin/config/`: route map, navigation config, and shared display copy.
+- `features/admin/lib/`: typed action results, public cache invalidation helpers, `FormData` coercion, and Storage validation/upload/cleanup helpers.
+- `features/admin/components/`: generic `DataTable`, `FormField`, `ImageUploader`, `ConfirmDialog`, `SortableList`, pagination, panels, headers, action buttons, and toasts. Each piece is its own file.
+- `features/admin/layout/`: sidebar, topbar, and active navigation links. The shell is the only client wrapper around the admin chrome.
+- Feature admin screens keep their queries, schemas, actions, and admin-specific components inside the owning feature folder.
+
+### Security and data flow
+
+- Every admin mutation calls `requireAdmin()` before reading any client input, validates with Zod, writes through the server-only `createAdminClient()`, invalidates the matching public cache tags, and returns a typed result.
+- Admin reads use the admin client after the layout/page guard so drafts and unpublished rows are visible to editors. Public cached queries continue to use the anon/public client and RLS.
+- Uploads happen in a dedicated guarded Server Action; parent forms store only bucket-relative paths. Replace/delete flows remove stale Storage objects after the database write succeeds.
+- Admin routes are never publicly cached: session readers stay behind Suspense, and `noindex` metadata is inherited from the admin layout.

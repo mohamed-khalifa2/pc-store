@@ -5,6 +5,7 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
 import { getEnv, getPublicEnv } from "@/lib/env";
+import { fetchWithTimeout } from "@/lib/supabase/fetch-with-timeout";
 import type { Database } from "@/lib/supabase/types";
 
 export function createPublicClient() {
@@ -13,7 +14,10 @@ export function createPublicClient() {
   return createSupabaseClient<Database>(
     env.NEXT_PUBLIC_SUPABASE_URL,
     env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-    { auth: { persistSession: false, autoRefreshToken: false } },
+    {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: { fetch: fetchWithTimeout },
+    },
   );
 }
 
@@ -25,6 +29,7 @@ export async function createClient() {
     env.NEXT_PUBLIC_SUPABASE_URL,
     env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     {
+      global: { fetch: fetchWithTimeout },
       cookies: {
         getAll() {
           return cookieStore.getAll();

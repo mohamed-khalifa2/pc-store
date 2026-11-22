@@ -1,0 +1,15 @@
+export const CATEGORY_COPY = {
+  indexEyebrow: "Browse",
+  indexTitle: "Categories",
+  indexDescription: "Find the right parts for your next build.",
+  heroEyebrow: "Category",
+  productsEyebrow: "In this category",
+  emptyTitle: "No products in this category yet",
+  emptyDescription: "Check back soon or browse the full catalog.",
+  notFoundTitle: "Category not found",
+  notFoundDescription: "That category does not exist. Browse all categories instead.",
+  browseCategories: "Browse categories",
+  loadErrorTitle: "Categories unavailable",
+  loadErrorDescription: "Categories could not be loaded. Please try again shortly.",
+  tryAgain: "Try again",
+} as const;

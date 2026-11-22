@@ -8,5 +8,6 @@ export type Banner = {
   ctaLabel: string | null;
   ctaHref: string | null;
   imageUrl: string;
+  mobileImageUrl: string;
   variant: BannerVariant;
 };

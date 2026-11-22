@@ -3,16 +3,17 @@ import { Heading } from "@/components/ui/Heading";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { cn } from "@/lib/utils/cn";
 
-import { HERO_STEPS } from "@/features/scroll-hero/config/steps";
+import type { HeroStep } from "@/features/scroll-hero/config/steps";
 
 type HeroCopyProps = {
+  steps: readonly HeroStep[];
   subtitle?: string | null;
 };
 
-export function HeroCopy({ subtitle }: HeroCopyProps) {
+export function HeroCopy({ steps, subtitle }: HeroCopyProps) {
   return (
     <div className="from-black-950 via-black-950/70 pointer-events-none absolute inset-x-0 bottom-0 z-50 bg-gradient-to-t to-transparent px-5 pt-32 pb-20 sm:px-8 md:pb-28 lg:px-12">
-      {HERO_STEPS.map((step, index) => {
+      {steps.map((step, index) => {
         const isFirst = index === 0;
         const body = isFirst && subtitle ? subtitle : step.body;
 
