@@ -16,7 +16,7 @@ export default async function AdminPage() {
         description="Today's orders, revenue, stock pressure, and the latest store activity."
         action={
           <LinkButton href={ADMIN_ROUTES.banners} variant="secondary" size="sm">
-            Manage banners
+            Manage hero &amp; banners
           </LinkButton>
         }
       />

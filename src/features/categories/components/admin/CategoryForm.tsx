@@ -114,7 +114,8 @@ export function CategoryForm({ categories, category }: CategoryFormProps) {
         bucket={STORAGE_BUCKETS.siteAssets}
         prefix={CATEGORY_IMAGE_PREFIX}
         initialPaths={category?.imagePath ? [category.imagePath] : []}
-        fallback="/images/categories/cpus.svg"
+        fallback="/images/categories/cpus.png"
+        fit="contain"
       />
       <div className="grid gap-6 sm:grid-cols-2">
         <FormField label="Visibility" error={err(F.isPublished)}>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { QuantityStepper } from "@/components/ui/QuantityStepper";
 import { CART_MAX_QUANTITY } from "@/lib/constants";
 
 import { useCartStore } from "@/features/cart/store/cart-store";
@@ -23,29 +24,14 @@ export function AddToCartButton({ productId, stock }: AddToCartButtonProps) {
 
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <div className="border-surface-700 flex items-center rounded-md border">
-        <button
-          type="button"
-          onClick={() => setQuantity((current) => Math.max(1, current - 1))}
-          disabled={quantity <= 1}
-          aria-label={PRODUCT_COPY.decreaseQuantity}
-          className="text-surface-400 hover:text-accent size-10 font-black disabled:opacity-40"
-        >
-          −
-        </button>
-        <span aria-live="polite" className="w-10 text-center text-sm font-black">
-          {quantity}
-        </span>
-        <button
-          type="button"
-          onClick={() => setQuantity((current) => Math.min(max, current + 1))}
-          disabled={quantity >= max}
-          aria-label={PRODUCT_COPY.increaseQuantity}
-          className="text-surface-400 hover:text-accent size-10 font-black disabled:opacity-40"
-        >
-          +
-        </button>
-      </div>
+      <QuantityStepper
+        value={quantity}
+        max={max}
+        size="md"
+        decreaseLabel={PRODUCT_COPY.decreaseQuantity}
+        increaseLabel={PRODUCT_COPY.increaseQuantity}
+        onChange={setQuantity}
+      />
       <Button type="button" onClick={() => addItem(productId, quantity)}>
         {PRODUCT_COPY.addToCart}
       </Button>

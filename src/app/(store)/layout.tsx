@@ -8,7 +8,7 @@ export default function StoreLayout({ children }: Readonly<{ children: ReactNode
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <main className="min-h-[calc(100vh-8rem)] flex-1">{children}</main>
+      <main className="flex-1">{children}</main>
       <Footer />
       <CartDrawer />
     </div>

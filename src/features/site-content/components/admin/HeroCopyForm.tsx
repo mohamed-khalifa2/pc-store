@@ -15,7 +15,6 @@ import type { AdminSiteContentEntry } from "@/features/site-content/types.admin"
 const FIELDS: readonly { key: SiteContentKey; label: string }[] = [
   { key: SITE_CONTENT_KEYS.heroTitle, label: "Hero title" },
   { key: SITE_CONTENT_KEYS.heroSubtitle, label: "Hero subtitle" },
-  { key: SITE_CONTENT_KEYS.heroBadge, label: "Hero badge" },
 ];
 
 function fieldValue(entries: readonly AdminSiteContentEntry[], key: SiteContentKey): string {

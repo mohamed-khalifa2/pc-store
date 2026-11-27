@@ -6,9 +6,11 @@ import { ADMIN_ROUTES } from "@/features/admin/config/routes";
 import { BannerSortControls } from "@/features/banners/components/admin/BannerSortControls";
 import { BannerTable } from "@/features/banners/components/admin/BannerTable";
 import { getAdminBanners } from "@/features/banners/queries/get-admin-banners";
+import { HeroArtworkForm } from "@/features/site-content/components/admin/HeroArtworkForm";
+import { getAdminSiteContent } from "@/features/site-content/queries/get-admin-site-content";
 
 export default async function AdminBannersPage() {
-  const banners = await getAdminBanners();
+  const [banners, content] = await Promise.all([getAdminBanners(), getAdminSiteContent()]);
   const newBannerAction = (
     <LinkButton href={ADMIN_ROUTES.bannerNew} size="sm">
       New banner
@@ -18,10 +20,16 @@ export default async function AdminBannersPage() {
   return (
     <div className="space-y-8">
       <AdminPageHeader
-        title="Banners"
-        description="Schedule campaigns, swap artwork, and choose where promotions appear."
+        title="Hero & banners"
+        description="Replace the storefront hero artwork, then schedule campaign banners."
         action={newBannerAction}
       />
+      <AdminPanel
+        title="Storefront hero artwork"
+        description="The full-screen image on the home page. Upload a replacement or keep the default."
+      >
+        <HeroArtworkForm entries={content} />
+      </AdminPanel>
       <AdminPanel title="All banners" description="Every campaign, ordered by display position.">
         {banners.length === 0 ? (
           <EmptyState

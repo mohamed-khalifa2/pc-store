@@ -1,8 +1,8 @@
 "use client";
 
-import { Button } from "@/components/ui/Button";
-import { ErrorState } from "@/components/ui/ErrorState";
-import { ADMIN_COPY } from "@/features/admin/config/copy";
+import { AdminRouteError } from "@/features/admin/components/AdminRouteError";
+
+const TITLE = "Product could not be loaded.";
 
 type ErrorProps = {
   error: Error & { digest?: string };
@@ -10,10 +10,5 @@ type ErrorProps = {
 };
 
 export default function Error({ reset }: ErrorProps) {
-  return (
-    <div className="space-y-8">
-      <ErrorState title={ADMIN_COPY.invalidId} description={ADMIN_COPY.loadError} />
-      <Button onClick={reset}>Try again</Button>
-    </div>
-  );
+  return <AdminRouteError reset={reset} title={TITLE} />;
 }

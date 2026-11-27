@@ -2,12 +2,12 @@ insert into public.categories (
   id, name, slug, description, image_path, sort_order, is_published, published_at
 )
 values
-  ('11111111-1111-4111-8111-111111111101', 'CPUs', 'cpus', 'Processors for every build.', 'categories/cpus.webp', 10, true, now()),
-  ('11111111-1111-4111-8111-111111111102', 'Motherboards', 'motherboards', 'AM5 and LGA1851 platforms.', 'categories/motherboards.webp', 20, true, now()),
-  ('11111111-1111-4111-8111-111111111103', 'Graphics Cards', 'graphics-cards', 'GPU power for gaming and content creation.', 'categories/graphics-cards.webp', 30, true, now()),
-  ('11111111-1111-4111-8111-111111111104', 'Memory', 'memory', 'High-speed DDR5 kits.', 'categories/memory.webp', 40, true, now()),
-  ('11111111-1111-4111-8111-111111111105', 'Storage', 'storage', 'NVMe drives and fast storage.', 'categories/storage.webp', 50, true, now()),
-  ('11111111-1111-4111-8111-111111111106', 'PC Cases', 'pc-cases', 'Airflow-first enclosures.', 'categories/pc-cases.webp', 60, true, now()),
+  ('11111111-1111-4111-8111-111111111101', 'CPUs', 'cpus', 'Processors for every build.', 'categories/cpus.png', 10, true, now()),
+  ('11111111-1111-4111-8111-111111111102', 'Motherboards', 'motherboards', 'AM5 and LGA1851 platforms.', 'categories/motherboards.png', 20, true, now()),
+  ('11111111-1111-4111-8111-111111111103', 'Graphics Cards', 'graphics-cards', 'GPU power for gaming and content creation.', 'categories/graphics-cards.png', 30, true, now()),
+  ('11111111-1111-4111-8111-111111111104', 'Memory', 'memory', 'High-speed DDR5 kits.', 'categories/memory.png', 40, true, now()),
+  ('11111111-1111-4111-8111-111111111105', 'Storage', 'storage', 'NVMe drives and fast storage.', 'categories/storage.png', 50, true, now()),
+  ('11111111-1111-4111-8111-111111111106', 'PC Cases', 'pc-cases', 'Airflow-first enclosures.', 'categories/pc-cases.png', 60, true, now()),
   ('11111111-1111-4111-8111-111111111107', 'Power Supplies', 'power-supplies', 'Reliable ATX 3.1 power.', 'categories/power-supplies.webp', 70, true, now()),
   ('11111111-1111-4111-8111-111111111108', 'CPU Coolers', 'cpu-coolers', 'Air and liquid cooling.', 'categories/cpu-coolers.webp', 80, true, now()),
   ('11111111-1111-4111-8111-111111111109', 'Monitors', 'monitors', 'High-refresh displays.', 'categories/monitors.webp', 90, true, now()),
@@ -46,7 +46,7 @@ insert into public.banners (
   sort_order, is_active, published_at, starts_at, ends_at
 )
 values
-  ('33333333-3333-4333-8333-333333333301', 'Build Week', 'banners/build-week.webp', 'Build week is live', 'Upgrade your rig with tuned component bundles.', 'Shop bundles', '/products', 10, true, now(), null, null),
+  ('33333333-3333-4333-8333-333333333301', 'Build Week', 'banners/build-week.webp', 'Build week is live', 'Upgrade your rig with tuned component bundles.', 'Shop bundles', '/bundles', 10, true, now(), null, null),
   ('33333333-3333-4333-8333-333333333302', 'GPU Drop', 'banners/gpu-drop.webp', 'Next-gen GPUs landed', 'Find the right card for 1440p and 4K.', 'Browse GPUs', '/categories/graphics-cards', 20, true, now(), null, null),
   ('33333333-3333-4333-8333-333333333303', 'Draft Campaign', 'banners/draft.webp', 'Draft banner', 'Hidden from the public site.', 'Coming soon', '/', 999, false, null, null, null)
 on conflict (name) do nothing;
@@ -68,11 +68,12 @@ insert into public.home_sections (
   key, kind, title, subtitle, body, config, sort_order, is_published, published_at
 )
 values
-  ('home.hero', 'hero', 'Built for the next level', 'Parts, prebuilts, and expert support.', $json${"badge":"New season"}$json$::jsonb, $json${}$json$::jsonb, 10, true, now()),
+  ('home.hero', 'hero', 'Built for the next level', 'Parts, prebuilts, and expert support.', $json${}$json$::jsonb, $json${}$json$::jsonb, 10, true, now()),
   ('home.marquee', 'marquee', 'Trusted by builders', null, $json${}$json$::jsonb, $json${"items":["AMD","NVIDIA","ASUS","MSI","CORSAIR","SAMSUNG"]}$json$::jsonb, 20, true, now()),
   ('home.banners', 'banners', 'Latest drops', 'Campaigns and launches.', $json${}$json$::jsonb, $json${"limit":3,"variants":["full","split","strip"]}$json$::jsonb, 30, true, now()),
   ('home.categories', 'featured_categories', 'Shop by category', 'Find the right upgrade fast.', $json${}$json$::jsonb, $json${"limit":6}$json$::jsonb, 40, true, now()),
   ('home.featured', 'featured_products', 'Featured builds', 'Hand-picked components for serious builders.', $json${}$json$::jsonb, $json${"limit":4}$json$::jsonb, 50, true, now()),
+  ('home.bundles', 'bundles', 'Ready-made bundles', 'Matched components that land well together, with the bundle saving already applied.', $json${}$json$::jsonb, $json${}$json$::jsonb, 55, true, now()),
   ('home.build_cta', 'build_cta', 'Build with confidence', 'Pick compatible parts without the guesswork.', $json${}$json$::jsonb, $json${"label":"Start a build","href":"/products"}$json$::jsonb, 60, true, now()),
   ('home.promise', 'why_us', 'Why PC//STORE', 'Built by builders, backed by real support.', $json${"points":["Verified parts","Fast delivery","Upgrade advice","Builder-tested picks"]}$json$::jsonb, $json${}$json$::jsonb, 70, true, now()),
   ('home.newsletter', 'newsletter', 'Stay in the loop', 'Drops, deals, and build guides. No noise.', $json${}$json$::jsonb, $json${}$json$::jsonb, 80, true, now()),

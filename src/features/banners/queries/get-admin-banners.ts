@@ -6,8 +6,10 @@ import { requireAdmin } from "@/features/auth/lib/require-admin";
 import { bannerRowSchema } from "@/features/banners/schemas/banner";
 import type { AdminBanner } from "@/features/banners/types.admin";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isMissingRelationError } from "@/lib/supabase/query-errors";
 
 type BannerRow = z.infer<typeof bannerRowSchema>;
+const LOAD_ERROR = "Banners could not be loaded.";
 
 export function toAdminBanner(row: BannerRow): AdminBanner {
   return {
@@ -39,11 +41,14 @@ export async function getAdminBanners(): Promise<AdminBanner[]> {
       .order("sort_order", { ascending: true })
       .order("name", { ascending: true });
 
-    if (error) return [];
+    if (isMissingRelationError(error)) return [];
+    if (error) throw new Error(LOAD_ERROR);
 
     const parsed = z.array(bannerRowSchema).safeParse(data ?? []);
-    return parsed.success ? parsed.data.map(toAdminBanner) : [];
-  } catch {
-    return [];
+    if (!parsed.success) throw new Error(LOAD_ERROR);
+    return parsed.data.map(toAdminBanner);
+  } catch (caught) {
+    if (caught instanceof Error) throw caught;
+    throw new Error(LOAD_ERROR);
   }
 }

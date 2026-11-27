@@ -1,4 +1,5 @@
 import type { Banner } from "@/features/banners/types";
+import type { Bundle } from "@/features/bundles/types";
 import type { CategoryCardData } from "@/features/categories/types";
 import type { ProductCardData } from "@/features/products/types";
 import type { SiteContent } from "@/features/site-content/types";
@@ -32,5 +33,6 @@ export type HomePageData = {
   banners: Banner[];
   categories: CategoryCardData[];
   products: ProductCardData[];
+  bundles: Bundle[];
   content: SiteContent;
 };

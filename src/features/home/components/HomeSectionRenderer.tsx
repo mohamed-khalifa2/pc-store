@@ -1,4 +1,6 @@
 import type { Banner } from "@/features/banners/types";
+import { BundlesSection } from "@/features/bundles/components/BundlesSection";
+import type { Bundle } from "@/features/bundles/types";
 import type { CategoryCardData } from "@/features/categories/types";
 import { BannersSection } from "@/features/home/sections/BannersSection";
 import { BrandMarquee } from "@/features/home/sections/BrandMarquee";
@@ -19,6 +21,7 @@ type HomeSectionRendererProps = {
   banners: Banner[];
   categories: CategoryCardData[];
   products: ProductCardData[];
+  bundles: Bundle[];
   content: SiteContent;
 };
 
@@ -27,6 +30,7 @@ export function HomeSectionRenderer({
   banners,
   categories,
   products,
+  bundles,
   content,
 }: HomeSectionRendererProps) {
   switch (section.kind) {
@@ -40,6 +44,15 @@ export function HomeSectionRenderer({
       return <FeaturedCategoriesSection section={section} categories={categories} />;
     case HOME_SECTION_KIND.featuredProducts:
       return <FeaturedProductsSection section={section} products={products} />;
+    case HOME_SECTION_KIND.bundles:
+      return (
+        <BundlesSection
+          bundles={bundles}
+          title={section.title ?? undefined}
+          description={section.subtitle ?? undefined}
+          showViewAll
+        />
+      );
     case HOME_SECTION_KIND.buildCta:
       return <BuildCtaBand section={section} />;
     case HOME_SECTION_KIND.whyUs:

@@ -78,7 +78,12 @@ export function AdminOrderTable({ rows }: AdminOrderTableProps) {
       columns={columns}
       rows={rows}
       getRowId={(row) => row.id}
-      empty={<EmptyState title="No orders found" description="Try a different status filter." />}
+      empty={
+        <EmptyState
+          title="No orders in this view"
+          description="New orders appear here after checkout. You can also change the status filter."
+        />
+      }
     />
   );
 }

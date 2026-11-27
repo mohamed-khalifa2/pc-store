@@ -2,8 +2,10 @@ import { z } from "zod";
 
 import { requireAdmin } from "@/features/auth/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isMissingRelationError } from "@/lib/supabase/query-errors";
 
 import { SITE_CONTENT_KEYS } from "@/features/site-content/config/keys";
+import { defaultAdminSiteContentEntries } from "@/features/site-content/lib/default-admin-entries";
 import { siteContentEntrySchema } from "@/features/site-content/schemas/site-content";
 import type { AdminSiteContentEntry } from "@/features/site-content/types.admin";
 
@@ -25,6 +27,7 @@ export async function getAdminSiteContent(): Promise<AdminSiteContentEntry[]> {
     .select("id, key, value, is_published, published_at")
     .order("key", { ascending: true });
 
+  if (isMissingRelationError(error)) return defaultAdminSiteContentEntries();
   if (error) throw new Error(LOAD_ERROR);
 
   const parsed = z.array(adminSiteContentRowSchema).safeParse(data ?? []);

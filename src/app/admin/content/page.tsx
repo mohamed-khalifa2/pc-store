@@ -27,7 +27,7 @@ export default async function AdminContentPage() {
       </AdminPanel>
       <AdminPanel
         title="Hero copy"
-        description="The headline and badge shown in the storefront hero."
+        description="The headline and supporting copy shown in the storefront hero."
       >
         <HeroCopyForm entries={content} />
       </AdminPanel>

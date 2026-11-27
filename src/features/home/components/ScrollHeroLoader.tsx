@@ -3,19 +3,35 @@
 import dynamic from "next/dynamic";
 
 import { HERO_STEPS, type HeroStep } from "@/features/scroll-hero/config/steps";
-import { HeroStatic } from "@/features/scroll-hero/components/HeroStatic";
+import { HeroHeader } from "@/features/scroll-hero/components/HeroHeader";
 
 const ScrollHero = dynamic(
   () => import("@/features/scroll-hero/components/ScrollHero").then((module) => module.ScrollHero),
-  { ssr: false, loading: () => <HeroStatic /> },
+  { ssr: false, loading: () => <HeroHeader /> },
 );
 
 type ScrollHeroLoaderProps = {
   title?: string | null;
   subtitle?: string | null;
+  imageSrc?: string;
+  imageAlt?: string;
   steps?: readonly HeroStep[];
 };
 
-export function ScrollHeroLoader({ title, subtitle, steps = HERO_STEPS }: ScrollHeroLoaderProps) {
-  return <ScrollHero title={title} subtitle={subtitle} steps={steps} />;
+export function ScrollHeroLoader({
+  title,
+  subtitle,
+  imageSrc,
+  imageAlt,
+  steps = HERO_STEPS,
+}: ScrollHeroLoaderProps) {
+  return (
+    <ScrollHero
+      title={title}
+      subtitle={subtitle}
+      imageSrc={imageSrc}
+      imageAlt={imageAlt}
+      steps={steps}
+    />
+  );
 }

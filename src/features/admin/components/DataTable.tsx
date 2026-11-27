@@ -17,7 +17,7 @@ type DataTableProps<T> = {
 
 export function DataTable<T>({ caption, columns, rows, getRowId, empty }: DataTableProps<T>) {
   return (
-    <div className="border-surface-800 rounded-card overflow-hidden border">
+    <div className="border-surface-800 rounded-card overflow-x-auto border">
       <table className="w-full min-w-[48rem] border-collapse text-left text-sm">
         <caption className="sr-only">{caption}</caption>
         <thead className="bg-surface-900 text-surface-400 text-xs tracking-widest uppercase">

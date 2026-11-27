@@ -11,6 +11,7 @@ import { FormField } from "@/features/admin/components/FormField";
 import type { AdminActionResult } from "@/features/admin/lib/action-result";
 import { STORAGE_BUCKETS } from "@/lib/constants";
 import { resolveAssetUrl } from "@/lib/format/asset-url";
+import { cn } from "@/lib/utils/cn";
 
 type UploadBucket = (typeof STORAGE_BUCKETS)[keyof typeof STORAGE_BUCKETS];
 
@@ -23,6 +24,7 @@ type ImageUploaderProps = {
   multiple?: boolean;
   max?: number;
   fallback?: string;
+  fit?: "cover" | "contain";
 };
 
 export function ImageUploader({
@@ -34,6 +36,7 @@ export function ImageUploader({
   multiple = false,
   max = multiple ? 10 : 1,
   fallback = "/images/products/generic.svg",
+  fit = "cover",
 }: ImageUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [paths, setPaths] = useState<string[]>([...initialPaths]);
@@ -96,7 +99,10 @@ export function ImageUploader({
               width={72}
               height={48}
               unoptimized
-              className="bg-surface-800 h-12 w-[4.5rem] rounded object-cover"
+              className={cn(
+                "bg-surface-800 h-12 w-[4.5rem] rounded",
+                fit === "contain" ? "object-contain" : "object-cover",
+              )}
             />
             <p className="text-surface-400 min-w-0 flex-1 truncate font-mono text-xs">{path}</p>
             <button

@@ -8,6 +8,7 @@ import { DEFAULT_PRODUCT_IMAGE } from "@/features/products/config/defaults";
 import { escapeLikeTerm } from "@/features/products/lib/search-term";
 import { resolveAssetUrl } from "@/lib/format/asset-url";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isMissingRelationError } from "@/lib/supabase/query-errors";
 import {
   ADMIN_PUBLISHED_FILTER,
   adminCategoryOptionRowSchema,
@@ -37,6 +38,12 @@ export type AdminProductListResult = {
   pageCount: number;
 };
 
+const LOAD_ERROR = "Products could not be loaded.";
+
+function loadFailed(): never {
+  throw new Error(LOAD_ERROR);
+}
+
 function emptyResult(page: number): AdminProductListResult {
   return { items: [], total: 0, page, pageCount: 1 };
 }
@@ -53,10 +60,11 @@ export async function getAdminProducts(
     const { data: categoryData, error: categoryError } = await client
       .from("categories")
       .select("*");
-    if (categoryError) return emptyResult(safe.page);
+    if (isMissingRelationError(categoryError)) return emptyResult(safe.page);
+    if (categoryError) loadFailed();
 
     const categoryRows = z.array(adminCategoryOptionRowSchema).safeParse(categoryData ?? []);
-    if (!categoryRows.success) return emptyResult(safe.page);
+    if (!categoryRows.success) loadFailed();
     const categories = categoryRows.data;
 
     const category = safe.category
@@ -78,10 +86,11 @@ export async function getAdminProducts(
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false })
       .range(from, from + PRODUCTS_PER_PAGE - 1);
-    if (error) return emptyResult(safe.page);
+    if (isMissingRelationError(error)) return emptyResult(safe.page);
+    if (error) loadFailed();
 
     const rows = z.array(adminProductRowSchema).safeParse(data ?? []);
-    if (!rows.success) return emptyResult(safe.page);
+    if (!rows.success) loadFailed();
 
     const thumbnails: Record<string, string> = {};
     const ids = rows.data.map((row) => row.id);
@@ -92,7 +101,7 @@ export async function getAdminProducts(
         .in("product_id", ids)
         .eq("is_active", true)
         .order("sort_order", { ascending: true });
-      if (imageError) return emptyResult(safe.page);
+      if (imageError && !isMissingRelationError(imageError)) loadFailed();
 
       const images = z.array(adminProductImageRowSchema).safeParse(imageData ?? []);
       if (images.success) {
@@ -128,7 +137,8 @@ export async function getAdminProducts(
       page: safe.page,
       pageCount: Math.max(1, Math.ceil(total / PRODUCTS_PER_PAGE)),
     };
-  } catch {
-    return emptyResult(safe.page);
+  } catch (caught) {
+    if (caught instanceof Error) throw caught;
+    throw new Error(LOAD_ERROR);
   }
 }

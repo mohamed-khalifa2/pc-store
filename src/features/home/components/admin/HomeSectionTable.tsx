@@ -64,24 +64,22 @@ const COLUMNS: DataTableColumn<AdminHomeSection>[] = [
 ];
 
 export function HomeSectionTable({ sections }: { sections: readonly AdminHomeSection[] }) {
-  if (sections.length === 0) {
-    return (
-      <EmptyState
-        title="No home sections yet"
-        description="Add a section below to start building the home page."
-      />
-    );
-  }
-
   return (
-    <div>
-      <DataTable
-        caption="Home page sections"
-        columns={COLUMNS}
-        rows={sections}
-        getRowId={(section) => section.id}
-      />
-      <details className="border-surface-800 mt-6 rounded-lg border p-5">
+    <div className="space-y-6">
+      {sections.length === 0 ? (
+        <EmptyState
+          title="No home sections yet"
+          description="Use the add form below to build the first section."
+        />
+      ) : (
+        <DataTable
+          caption="Home page sections"
+          columns={COLUMNS}
+          rows={sections}
+          getRowId={(section) => section.id}
+        />
+      )}
+      <details className="border-surface-800 rounded-lg border p-5">
         <summary className="text-accent cursor-pointer text-xs font-black tracking-[0.16em] uppercase">
           Add section
         </summary>

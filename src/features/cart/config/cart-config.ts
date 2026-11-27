@@ -1,5 +1,3 @@
-import { NAV_LABELS } from "@/lib/constants";
-
 export const CART_STORAGE_KEY = "pc-store-cart";
 export const CART_STORAGE_VERSION = 1;
 
@@ -30,8 +28,3 @@ export const CART_COPY = {
   itemSingular: "item",
   itemPlural: "items",
 } as const;
-
-export function cartAccessibleLabel(count: number): string {
-  const itemLabel = count === 1 ? CART_COPY.itemSingular : CART_COPY.itemPlural;
-  return `${NAV_LABELS.cart}, ${count} ${itemLabel}`;
-}

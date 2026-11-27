@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import type { AdminActionResult } from "@/features/admin/lib/action-result";
+
+const AUTO_DISMISS_MS = 5000;
 
 type AdminToastProps = {
   result: AdminActionResult<unknown> | null;
@@ -10,29 +12,46 @@ type AdminToastProps = {
 };
 
 export function AdminToast({ result, onDismiss }: AdminToastProps) {
-  useEffect(() => {
-    if (!result?.error || !onDismiss) return;
-    const timer = window.setTimeout(onDismiss, 5000);
-    return () => window.clearTimeout(timer);
-  }, [result, onDismiss]);
+  const [visible, setVisible] = useState(true);
+  const [lastResult, setLastResult] = useState(result);
 
-  if (!result?.error) return null;
+  if (result !== lastResult) {
+    setLastResult(result);
+    setVisible(true);
+  }
+
+  useEffect(() => {
+    if (!result || !visible) return;
+
+    const timer = window.setTimeout(() => {
+      setVisible(false);
+      onDismiss?.();
+    }, AUTO_DISMISS_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [result, visible, onDismiss]);
+
+  function dismiss() {
+    setVisible(false);
+    onDismiss?.();
+  }
+
+  if (!result || !visible) return null;
 
   return (
     <div
       role={result.ok ? "status" : "alert"}
+      aria-live={result.ok ? "polite" : "assertive"}
       className="border-surface-700 bg-surface-900 fixed right-4 bottom-4 z-[100] max-w-sm rounded-lg border px-5 py-4 shadow-2xl sm:right-8 sm:bottom-8"
     >
       <p className="text-sm font-bold text-white">{result.error}</p>
-      {onDismiss ? (
-        <button
-          type="button"
-          onClick={onDismiss}
-          className="text-surface-400 hover:text-accent mt-2 text-xs font-black tracking-widest uppercase"
-        >
-          Dismiss
-        </button>
-      ) : null}
+      <button
+        type="button"
+        onClick={dismiss}
+        className="text-surface-400 hover:text-accent mt-2 text-xs font-black tracking-widest uppercase"
+      >
+        Dismiss
+      </button>
     </div>
   );
 }

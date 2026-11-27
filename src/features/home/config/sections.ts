@@ -6,6 +6,7 @@ export const HOME_SECTION_KIND = {
   banners: "banners",
   featuredCategories: "featured_categories",
   featuredProducts: "featured_products",
+  bundles: "bundles",
   buildCta: "build_cta",
   whyUs: "why_us",
   newsletter: "newsletter",

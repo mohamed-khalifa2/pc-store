@@ -3,6 +3,7 @@ import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 
 import { getEnv, getPublicEnv } from "@/lib/env";
 import { fetchWithTimeout } from "@/lib/supabase/fetch-with-timeout";
@@ -22,6 +23,7 @@ export function createPublicClient() {
 }
 
 export async function createClient() {
+  await connection();
   const cookieStore = await cookies();
   const env = getEnv();
 

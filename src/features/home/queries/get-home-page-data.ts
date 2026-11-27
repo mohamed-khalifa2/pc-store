@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { getActiveBanners } from "@/features/banners/queries/get-active-banners";
+import { getBundles } from "@/features/bundles/queries/get-bundles";
 import { getFeaturedCategories } from "@/features/categories/queries/get-featured-categories";
 import {
   DEFAULT_BANNER_VARIANTS,
@@ -46,12 +47,13 @@ export async function getHomePageData(): Promise<HomePageData> {
   const categorySection = getSection(HOME_SECTION_KIND.featuredCategories, sections);
   const productSection = getSection(HOME_SECTION_KIND.featuredProducts, sections);
 
-  const [categories, products] = await Promise.all([
+  const [categories, products, bundles] = await Promise.all([
     getFeaturedCategories(
       getLimit(categorySection?.config.limit, DEFAULT_SECTION_LIMITS.categories),
     ),
     getFeaturedProducts(getLimit(productSection?.config.limit, DEFAULT_SECTION_LIMITS.products)),
+    getBundles(),
   ]);
 
-  return { sections, banners, categories, products, content };
+  return { sections, banners, categories, products, bundles, content };
 }

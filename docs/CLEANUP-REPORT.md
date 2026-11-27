@@ -5,6 +5,8 @@
 **Baseline Health Check**: `pnpm lint`, `pnpm typecheck`, `pnpm format:check`, and `pnpm build` all pass with exit code `0`.  
 **Analysis Tools Used**: `knip` (`6.47.0`), `depcheck` (`1.4.7`), `ts-prune`, `ripgrep` / `git grep`, Node.js AST/search scripts.
 
+> **Superseded by the Phase 8 SVG-first hero:** the R3F/Three/GLB hero, `optimize-hero-models` script, `use-webgl-support` hook, and multi-part SVG fallback were intentionally removed from the current codebase. The "MUST KEEP" notes below describe the older audit baseline only.
+
 ---
 
 ## 1. Project Map

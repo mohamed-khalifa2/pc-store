@@ -10,6 +10,7 @@ import { initialAdminResult, type AdminActionResult } from "@/features/admin/lib
 import { updateSiteContent } from "@/features/site-content/actions/update-site-content";
 import { DEFAULT_SITE_CONTENT } from "@/features/site-content/config/defaults";
 import { SITE_CONTENT_KEYS, type SiteContentKey } from "@/features/site-content/config/keys";
+import { SOCIAL_LINKS } from "@/features/site-content/config/socials";
 import type { AdminSiteContentEntry } from "@/features/site-content/types.admin";
 
 const TEXTAREA_CLASS = [
@@ -29,9 +30,7 @@ const FIELDS: readonly { key: SiteContentKey; label: string; multiline?: boolean
   { key: SITE_CONTENT_KEYS.seoTitle, label: "SEO title" },
   { key: SITE_CONTENT_KEYS.seoDescription, label: "SEO description", multiline: true },
   { key: SITE_CONTENT_KEYS.footerText, label: "Footer text", multiline: true },
-  { key: SITE_CONTENT_KEYS.socialFacebook, label: "Facebook URL" },
-  { key: SITE_CONTENT_KEYS.socialInstagram, label: "Instagram URL" },
-  { key: SITE_CONTENT_KEYS.socialX, label: "X URL" },
+  ...SOCIAL_LINKS.map((social) => ({ key: social.key, label: social.adminLabel })),
 ];
 
 function fieldValue(entries: readonly AdminSiteContentEntry[], key: SiteContentKey): string {

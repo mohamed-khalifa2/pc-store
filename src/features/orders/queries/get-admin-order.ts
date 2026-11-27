@@ -7,6 +7,7 @@ import { ADMIN_COPY } from "@/features/admin/config/copy";
 import { orderWithItemsSchema } from "@/features/orders/schemas/order";
 import type { OrderDetailData } from "@/features/orders/types";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isMissingRelationError } from "@/lib/supabase/query-errors";
 
 export async function getAdminOrder(rawId: string): Promise<OrderDetailData | null> {
   await requireAdmin();
@@ -21,6 +22,7 @@ export async function getAdminOrder(rawId: string): Promise<OrderDetailData | nu
     .eq("id", id.data)
     .maybeSingle();
 
+  if (isMissingRelationError(error)) return null;
   if (error) throw new Error(ADMIN_COPY.loadError);
   if (!data) return null;
 

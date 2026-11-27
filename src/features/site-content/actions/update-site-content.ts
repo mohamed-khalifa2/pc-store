@@ -15,7 +15,8 @@ import { requireAdmin } from "@/features/auth/lib/require-admin";
 import { CACHE_TAGS } from "@/lib/constants";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-import { SITE_CONTENT_KEYS } from "@/features/site-content/config/keys";
+import { SITE_CONTENT_KEYS, type SiteContentKey } from "@/features/site-content/config/keys";
+import { validateContentField } from "@/features/site-content/schemas/content-fields";
 import { siteContentEntrySchema } from "@/features/site-content/schemas/site-content";
 
 const ALLOWED_KEYS = new Set<string>(Object.values(SITE_CONTENT_KEYS));
@@ -49,6 +50,17 @@ export async function updateSiteContent(formData: FormData): Promise<AdminAction
       const field = index >= 0 ? (entries[index]?.key ?? "form") : "form";
       fieldErrors[field] = [...(fieldErrors[field] ?? []), issue.message];
     }
+    return adminFailure("Check the highlighted fields.", fieldErrors);
+  }
+
+  const fieldErrors: AdminFieldErrors = {};
+  for (const entry of parsed.data) {
+    const validated = validateContentField(entry.key as SiteContentKey, entry.value);
+    if (!validated.success) {
+      fieldErrors[entry.key] = validated.error.issues.map((issue) => issue.message);
+    }
+  }
+  if (Object.keys(fieldErrors).length > 0) {
     return adminFailure("Check the highlighted fields.", fieldErrors);
   }
 

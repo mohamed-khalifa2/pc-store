@@ -14,7 +14,9 @@
 
 - `src/app/layout.tsx`: root HTML shell, `next/font`, metadata, global CSS.
 - `src/app/(store)/layout.tsx`: public store shell with `Header`, `main`, and `Footer`.
-- `src/app/(store)/page.tsx`: composition-only home page; it fetches `getHomePageData()` and renders sections in `home_sections.sort_order`.
+- `src/app/(store)/page.tsx`: composition-only home page; it wraps the async `HomeContent` renderer in Suspense with `HomeSkeleton` and renders sections in `home_sections.sort_order`.
+- `src/app/(store)/about` and `src/app/(store)/terms`: static pages rendered from `features/site-content/config/static-pages.ts` through `StaticPageView`.
+- `src/app/(store)/bundles`: public bundle catalog with Suspense and a dimension-matched bundle skeleton.
 - `src/app/(auth)/login` and `src/app/(auth)/signup`: auth forms composed from `features/auth`.
 - `src/app/(store)/orders/page.tsx`: guarded customer account placeholder.
 - `src/app/admin/`: guarded admin shell and overview page.
@@ -37,8 +39,8 @@ Phase 4 filled the `home`, `scroll-hero`, `banners`, `site-content`, `products`,
 
 ## Shared layers
 
-- `src/components/ui/`: `Button`, `Input`, `LinkButton`, `Container`, `Section`, `Heading`, `Badge`, `Skeleton`, and `button-styles.ts`.
-- `src/components/layout/`: `Header`, `Footer`, `Logo`, `DesktopNav`, `MobileNav`, `CartIndicator`, and `nav-items.ts`.
+- `src/components/ui/`: `Button`, `Input`, `LinkButton`, `Container`, `Section`, `Heading`, `Badge`, `Skeleton`, `EmptyState`, `QuantityStepper`, `button-styles.ts`, and dumb inline SVG icons under `icons/`.
+- `src/components/layout/`: `Header`, `Footer`, `FooterSocialLinks`, `Logo`, `DesktopNav`, `MobileNav`, `CartIndicator`, and `nav-items.ts`.
 - `src/lib/constants.ts`: site metadata, route constants, navigation labels, cache tags, storage buckets, blur placeholder.
 - `src/lib/env.ts`: Zod-validated environment access via `getEnv()`, `getPublicEnv()`, and `getSiteUrl()`.
 - `src/lib/format/`: asset URL resolution, safe external href validation, and EGP formatting.
@@ -78,8 +80,8 @@ Phase 4 filled the `home`, `scroll-hero`, `banners`, `site-content`, `products`,
 - `features/home/queries/get-home-page-data.ts` is the single page data helper. It composes cached reads from `home`, `banners`, `categories`, `products`, and `site-content`.
 - `src/app/(store)/page.tsx` only calls that helper, emits JSON-LD, and maps `home_sections` to `HomeSectionRenderer`.
 - `HomeSectionRenderer` maps each section kind to one file under `features/home/sections/`. Banner variants map to `FullWidthPromo`, `SplitBanner`, or `CategoryStrip`.
-- `ScrollHeroLoader` dynamically imports the heavy `ScrollHero` client component. `ScrollHero` owns the reduced-motion branch and mounts `SmoothScrollProvider`, `HeroStage`, and `HeroCopy`.
-- `useHeroTimeline` is the only module that imports GSAP/ScrollTrigger, using dynamic `import()` so those bytes are not in the initial non-animated bundle. `SmoothScrollProvider` dynamically imports Lenis and uses the same GSAP ticker.
+- `ScrollHeroLoader` dynamically imports the `ScrollHero` client component. `ScrollHero` mounts `SmoothScrollProvider`, `HeroHeader`, and the parallax hook; reduced motion disables animation while preserving the same markup.
+- `useHeroParallax` lazy-loads GSAP/ScrollTrigger on mount because the hero is above the fold on the home route. `SmoothScrollProvider` dynamically imports Lenis and uses the same GSAP ticker.
 - Parallax banners lazy-load GSAP/ScrollTrigger only after an `IntersectionObserver` reports the banner near the viewport.
 
 ## Security and data boundaries
@@ -163,3 +165,33 @@ pnpm admin:bootstrap <email>
 - Admin reads use the admin client after the layout/page guard so drafts and unpublished rows are visible to editors. Public cached queries continue to use the anon/public client and RLS.
 - Uploads happen in a dedicated guarded Server Action; parent forms store only bucket-relative paths. Replace/delete flows remove stale Storage objects after the database write succeeds.
 - Admin routes are never publicly cached: session readers stay behind Suspense, and `noindex` metadata is inherited from the admin layout.
+
+## Phase 10 additions
+
+### Routes and composition
+
+- The home page delegates data/runtime work to `features/home/components/HomeContent.tsx`, so the route file stays composition-only and Suspense can stream `HomeSkeleton`.
+- `/about` and `/terms` are static Server Component routes. Their copy is typed config, rendered by the single dumb `StaticPageView`; no database read or admin action is involved.
+- `/bundles` composes `BundlesCatalog`, which reads `getBundles()` and renders the shared `BundlesSection` with an `h1`.
+
+### Features
+
+- `features/bundles/config/`: curated bundle definitions, discount metadata, and display copy.
+- `features/bundles/schemas/`: Zod validation for bundle definitions.
+- `features/bundles/queries/`: server-side bundle aggregation; product rows still come from validated cached product queries.
+- `features/bundles/components/`: `BundlesSection`, `BundleCard`, `BundlesCatalog`, and matching skeletons.
+- `features/site-content/config/static-pages.ts`: typed static copy for About and Terms & policies.
+- `features/site-content/components/StaticPageView.tsx`: shared semantic renderer for static copy.
+- `features/home/config/why-us-icons.ts`: maps trust-point positions to dumb inline SVG icons.
+
+### Skeleton and layout-shift strategy
+
+- `ProductCardSkeleton` mirrors the real card's `aspect-[4/3]` image and text stack. `ProductsSkeleton` mirrors the catalog header, filter card, `gap-6`, and 12-card grid.
+- `ProductDetailSkeleton` mirrors the square gallery, thumbnail row, purchase column, and nested related-products section; `RelatedProductsSkeleton` reuses the product card skeleton.
+- `HomeHeroSkeleton` uses the same full-screen `svh` height and mobile artwork-first ordering as the real hero. `HomeSkeleton` mirrors the default section cadence and reuses product/bundle card skeletons.
+- `BundleCardSkeleton` and `BundlesSkeleton` mirror the `aspect-[16/10]` bundle image and three-column grid.
+
+### Data and security
+
+- Bundles do not introduce a table. Product data is still read through public cached queries guarded by RLS; bundle prices are recomputed from validated product rows on the server.
+- The only database change is migration `202611200017_add_bundles_home_section.sql`, which extends the `home_sections_kind_check` constraint. Generated Supabase types are unchanged because `kind` is already a string.

@@ -2,10 +2,12 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/Badge";
+import { ArrowUpRightIcon } from "@/components/ui/icons/ArrowUpRightIcon";
 import { BLUR_PLACEHOLDER, ROUTES } from "@/lib/constants";
 import { isRemoteUrl } from "@/lib/format/asset-url";
 import { formatEgp } from "@/lib/format/currency";
 
+import { PRODUCT_COPY } from "@/features/products/config/copy";
 import type { ProductCardData } from "@/features/products/types";
 
 type ProductCardProps = {
@@ -18,7 +20,7 @@ export function ProductCard({ product }: ProductCardProps) {
   return (
     <Link
       href={ROUTES.product(product.slug)}
-      className="rounded-card border-surface-800 bg-surface-900/60 group block border p-4 transition-transform duration-300 hover:-translate-y-1"
+      className="rounded-card border-surface-800 bg-surface-900/60 group hover:border-accent-strong hover:shadow-card-hover relative block border p-4 transition-[transform,border-color,box-shadow] duration-[var(--duration-normal)] ease-[var(--ease-out-expo)] hover:-translate-y-1 focus-visible:-translate-y-1"
     >
       <div className="bg-black-900 relative aspect-[4/3] overflow-hidden rounded-xl">
         <Image
@@ -31,8 +33,19 @@ export function ProductCard({ product }: ProductCardProps) {
           unoptimized={isRemoteUrl(product.imageUrl)}
           className="object-cover opacity-85 transition-[transform,opacity] duration-500 group-hover:scale-105 group-hover:opacity-100"
         />
-        {onSale && <Badge className="absolute top-3 left-3">Sale</Badge>}
+        <div
+          aria-hidden="true"
+          className="from-black-950/70 pointer-events-none absolute inset-0 bg-gradient-to-t to-transparent opacity-60"
+        />
+        {onSale && <Badge className="absolute top-3 left-3">{PRODUCT_COPY.saleBadge}</Badge>}
+        <span
+          aria-hidden="true"
+          className="bg-black-950/80 text-accent absolute right-3 bottom-3 grid size-9 place-items-center rounded-full opacity-0 transition-opacity duration-[var(--duration-normal)] group-hover:opacity-100 group-focus-visible:opacity-100"
+        >
+          <ArrowUpRightIcon />
+        </span>
       </div>
+
       <div className="mt-4 space-y-2">
         <h3 className="text-base font-black text-white">{product.name}</h3>
         {product.description && (
@@ -47,7 +60,9 @@ export function ProductCard({ product }: ProductCardProps) {
           )}
         </div>
         <p className="text-surface-400 text-xs font-bold tracking-[0.14em] uppercase">
-          {product.stock > 0 ? `${product.stock} in stock` : "Out of stock"}
+          {product.stock > 0
+            ? `${product.stock} ${PRODUCT_COPY.inStockStatus}`
+            : PRODUCT_COPY.outOfStock}
         </p>
       </div>
     </Link>

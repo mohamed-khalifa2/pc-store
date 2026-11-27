@@ -2,7 +2,9 @@ import { z } from "zod";
 
 import { requireAdmin } from "@/features/auth/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isMissingRelationError } from "@/lib/supabase/query-errors";
 
+import { defaultAdminHomeSections } from "@/features/home/lib/default-admin-sections";
 import {
   homeSectionConfigSchema,
   homeSectionRowSchema,
@@ -43,6 +45,7 @@ export async function getAdminHomeSections(): Promise<AdminHomeSection[]> {
     .select("id, key, kind, title, subtitle, body, config, sort_order, is_published, published_at")
     .order("sort_order", { ascending: true });
 
+  if (isMissingRelationError(error)) return defaultAdminHomeSections();
   if (error) throw new Error(LOAD_ERROR);
 
   const parsed = z.array(adminHomeSectionRowSchema).safeParse(data ?? []);

@@ -1,6 +1,7 @@
 "use client";
 
-import { cartAccessibleLabel } from "@/features/cart/config/cart-config";
+import { buttonClassName } from "@/components/ui/button-styles";
+import { CartIcon } from "@/components/ui/icons/CartIcon";
 import { selectCartCount, useCartHydrated, useCartStore } from "@/features/cart/store/cart-store";
 import { CART_COUNT_PLACEHOLDER, NAV_LABELS } from "@/lib/constants";
 
@@ -14,16 +15,11 @@ export function CartIndicator() {
     <button
       type="button"
       onClick={openCart}
-      className="hover:text-accent inline-flex items-center gap-2 text-sm font-bold tracking-[0.12em] text-white uppercase"
+      className={buttonClassName("secondary", "sm", "h-11 rounded-full pr-2 pl-4")}
     >
-      <span className="sr-only">{cartAccessibleLabel(count)}</span>
-      <span aria-hidden="true" className="hidden sm:inline">
-        {NAV_LABELS.cart}
-      </span>
-      <span
-        aria-hidden="true"
-        className="bg-accent text-black-950 grid size-6 place-items-center rounded-full text-xs font-black"
-      >
+      <CartIcon aria-hidden="true" />
+      <span className="hidden text-xs sm:inline">{NAV_LABELS.cart}</span>
+      <span className="bg-accent text-black-950 grid size-7 place-items-center rounded-full text-xs font-black tabular-nums">
         {count}
       </span>
     </button>

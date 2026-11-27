@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 
-import { Button } from "@/components/ui/Button";
+import { CloseIcon } from "@/components/ui/icons/CloseIcon";
+import { QuantityStepper } from "@/components/ui/QuantityStepper";
 import { CART_COPY } from "@/features/cart/config/cart-config";
 import { getStockWarning } from "@/features/cart/lib/stock-warning";
 import type { CartDetailLine } from "@/features/cart/schemas/cart-details";
@@ -42,10 +43,10 @@ export function CartLineItem({ line }: CartLineItemProps) {
           <button
             type="button"
             onClick={() => removeItem(line.id)}
-            className="text-surface-400 hover:text-danger text-xs font-bold tracking-[0.12em] uppercase"
+            className="text-surface-400 hover:bg-danger/10 hover:text-danger grid size-8 shrink-0 place-items-center rounded-md transition-colors"
           >
             <span className="sr-only">{`${CART_COPY.remove} ${line.name}`}</span>
-            <span aria-hidden="true">X</span>
+            <CloseIcon className="size-4" />
           </button>
         </div>
         <p className="text-surface-400 mt-1 text-xs">
@@ -53,31 +54,13 @@ export function CartLineItem({ line }: CartLineItemProps) {
         </p>
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="border-surface-700 inline-flex items-center rounded-md border">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="size-9 px-0"
-              disabled={line.quantity <= 1}
-              onClick={() => setQuantity(line.id, line.quantity - 1)}
-            >
-              <span className="sr-only">{`${CART_COPY.decreaseQuantity} ${line.name}`}</span>
-              <span aria-hidden="true">-</span>
-            </Button>
-            <span aria-live="polite" className="w-8 text-center text-sm font-black">
-              {line.quantity}
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="size-9 px-0"
-              disabled={line.quantity >= CART_MAX_QUANTITY}
-              onClick={() => setQuantity(line.id, line.quantity + 1)}
-            >
-              <span className="sr-only">{`${CART_COPY.increaseQuantity} ${line.name}`}</span>
-              <span aria-hidden="true">+</span>
-            </Button>
-          </div>
+          <QuantityStepper
+            value={line.quantity}
+            max={CART_MAX_QUANTITY}
+            decreaseLabel={`${CART_COPY.decreaseQuantity} ${line.name}`}
+            increaseLabel={`${CART_COPY.increaseQuantity} ${line.name}`}
+            onChange={(quantity) => setQuantity(line.id, quantity)}
+          />
           <span className="text-accent text-base font-black">{formatEgp(line.lineTotalEgp)}</span>
         </div>
 

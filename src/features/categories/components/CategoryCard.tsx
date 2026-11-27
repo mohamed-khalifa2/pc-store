@@ -24,7 +24,7 @@ export function CategoryCard({ category }: CategoryCardProps) {
         placeholder="blur"
         blurDataURL={BLUR_PLACEHOLDER}
         unoptimized={isRemoteUrl(category.imageUrl)}
-        className="object-cover opacity-80 transition-[transform,opacity] duration-500 group-hover:scale-105 group-hover:opacity-100"
+        className="object-contain p-5 opacity-80 transition-[transform,opacity] duration-500 group-hover:scale-105 group-hover:opacity-100"
       />
       <div className="from-black-950 via-black-950/20 absolute inset-0 bg-gradient-to-t to-transparent" />
       <div className="absolute inset-x-0 bottom-0 p-5">

@@ -8,6 +8,7 @@ import type { OrderStatus } from "@/features/orders/schemas/order";
 import { orderRowSchema } from "@/features/orders/schemas/order";
 import type { OrderSummary } from "@/features/orders/types";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isMissingRelationError } from "@/lib/supabase/query-errors";
 
 export const ALL_ORDER_STATUSES = "all";
 
@@ -22,6 +23,7 @@ export async function getAdminOrders(status: OrderStatus | null): Promise<OrderS
   if (status) query = query.eq("status", status);
 
   const { data, error } = await query;
+  if (isMissingRelationError(error)) return [];
   if (error) throw new Error(ADMIN_COPY.loadError);
 
   const parsed = z.array(orderRowSchema).safeParse(data ?? []);

@@ -64,13 +64,14 @@ The schema is defined by timestamped migrations in `supabase/migrations/`. Every
 ### `site_content`
 
 - Unique `key`, `value jsonb`, `is_published`, `published_at`.
-- Seed keys cover site name/description, contact details, shipping note, and home SEO.
+- Seed keys cover site name/description, contact details, shipping note, home SEO, hero artwork (`home.hero.image`, `home.hero.image_alt`), and bundle definitions (`bundles.definitions`).
+- About and Terms & policies copy is intentionally static TypeScript config, not `site_content`; no migration or admin form is needed.
 - Admin UI should edit values through keyed forms rather than raw JSON only.
 
 ### `home_sections`
 
 - Unique `key`, `kind`, optional `title`/`subtitle`, `body jsonb`, `config jsonb`.
-- Current `kind` values: `hero`, `marquee`, `banners`, `featured_categories`, `featured_products`, `build_cta`, `why_us`, `newsletter`, `footer_cta`.
+- Current `kind` values: `hero`, `marquee`, `banners`, `featured_categories`, `featured_products`, `bundles`, `build_cta`, `why_us`, `newsletter`, `footer_cta`.
 - Legacy `category_grid`, `banner_carousel`, and `rich_text` rows are still accepted and normalized to `featured_categories`, `banners`, and `why_us`.
 - `config` supports `limit`, `variants`, `items`, `href`, and `label`. `body` may contain arrays such as trust `points`.
 - `sort_order`, `is_published`, `published_at` control public composition.
@@ -169,3 +170,19 @@ Migration `202611200015_create_place_order_rpc.sql` adds `public.place_order(p_u
 - `/admin/categories` edits taxonomy, ordering, publication, and category artwork. Deletes preserve order history because `order_items.product_id` uses `set null`.
 - `/admin/orders` is read-only except for `status`. Order rows remain immutable snapshots for totals, addresses, and line items.
 - All Storage-backed fields store bucket-relative paths. Public queries resolve those paths with `resolveAssetUrl()`; admin actions validate MIME type and file size before upload and delete replaced objects by path.
+
+## Phase 10 content additions
+
+- `bundles` is an extension of the existing `home_sections` kind list; migration `202611200017_add_bundles_home_section.sql` updates the check constraint only. No generated types change is needed.
+- Bundle membership and discounts live in `features/bundles/config/bundles.ts`. Public bundle totals are recomputed server-side from validated product rows; no client price is trusted and no new RLS table is introduced.
+- The home bundles section uses no special `config` fields. Existing admin controls can publish/hide it and change its title/subtitle/order; bundle contents are now edited from `/admin/bundles` and stored as validated JSON in `site_content`, with TypeScript config as the seed/fallback.
+- The old `home.hero.badge` site-content key and the hero section body `badge` value are no longer used and were removed from defaults, seed data, and the admin hero form.
+
+## Phase 12 admin editing model
+
+- `/admin/banners` now owns the hero artwork as well as promo banners. The hero image is a `site-assets` storage path in `home.hero.image`; `home.hero.image_alt` supplies the accessible description. The built-in transparent PNG is used whenever no valid stored path exists.
+- `/admin/bundles` creates, edits, and deletes bundle definitions. All definitions live in the single `bundles.definitions` JSON value; no `bundles` table, RLS policy, or generated-type change was added. Product slugs and discounts are revalidated with Zod before the JSON is rewritten.
+- `/admin/categories` and `/admin/products` continue to own category artwork and ordered product images. Both use the shared `ImageUploader`, which uploads to Storage first and persists only bucket-relative paths.
+- Cache invalidation for hero artwork and bundles uses the existing `site-content` tag, so admin saves refresh the public home, bundles, and settings reads together.
+- Missing database relations fall back to built-in defaults or empty admin states so the dashboard renders before migrations are applied. Invalid rows, permission errors, and transport failures still throw and render the shared error boundary.
+- **Admin roles:** only `app_metadata.role = "admin"` exists. There are no editor, manager, or viewer tiers. All admins can manage hero artwork, banners, home sections, site content/settings, categories, products, and bundles; view orders, update order status, and print invoices. RLS still blocks non-admins from writes, and Server Actions independently call `requireAdmin()` before parsing input.

@@ -23,7 +23,7 @@ export function CategoryHero({ category }: CategoryHeroProps) {
           placeholder="blur"
           blurDataURL={BLUR_PLACEHOLDER}
           unoptimized={isRemoteUrl(category.imageUrl)}
-          className="object-cover opacity-60"
+          className="object-contain p-8 opacity-60"
         />
         <div className="from-black-950 via-black-950/70 absolute inset-0 bg-gradient-to-t to-transparent" />
       </div>

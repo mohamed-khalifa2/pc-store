@@ -2,6 +2,7 @@
 
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LinkButton } from "@/components/ui/LinkButton";
+import { CartIcon } from "@/components/ui/icons/CartIcon";
 import { CartLineList } from "@/features/cart/components/CartLineList";
 import { CartSummary } from "@/features/cart/components/CartSummary";
 import { CartSkeleton } from "@/features/cart/components/CartSkeleton";
@@ -36,6 +37,7 @@ export function CartDetails({ items }: CartDetailsProps) {
   if (lines.length === 0) {
     return (
       <EmptyState
+        icon={<CartIcon className="size-6" />}
         title={CART_COPY.emptyTitle}
         description={CART_COPY.emptyDescription}
         action={

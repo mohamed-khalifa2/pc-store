@@ -7,6 +7,7 @@ import { ADMIN_COPY } from "@/features/admin/config/copy";
 import { adminCategoryRowSchema } from "@/features/categories/schemas/admin-category";
 import type { AdminCategory } from "@/features/categories/types.admin";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isMissingRelationError } from "@/lib/supabase/query-errors";
 
 const CATEGORY_COLUMNS =
   "id, name, slug, description, image_path, parent_id, sort_order, is_published, published_at";
@@ -37,6 +38,7 @@ export async function getAdminCategories(): Promise<AdminCategory[]> {
     .order("sort_order", { ascending: true })
     .order("name", { ascending: true });
 
+  if (isMissingRelationError(error)) return [];
   if (error) throw new Error(ADMIN_COPY.loadError);
 
   const parsed = z.array(adminCategoryRowSchema).safeParse(data ?? []);

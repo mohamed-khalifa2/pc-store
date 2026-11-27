@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/constants";
 
+import { HomeContent } from "@/features/home/components/HomeContent";
+import { HomeSkeleton } from "@/features/home/components/HomeSkeleton";
 import { SITE_CONTENT_KEYS } from "@/features/site-content/config/keys";
 import { getSiteText } from "@/features/site-content/lib/get-site-text";
 import { getSiteContent } from "@/features/site-content/queries/get-site-content";
-import { HomeJsonLd } from "@/features/home/components/HomeJsonLd";
-import { HomeSectionRenderer } from "@/features/home/components/HomeSectionRenderer";
-import { getHomePageData } from "@/features/home/queries/get-home-page-data";
 
 export async function generateMetadata(): Promise<Metadata> {
   const content = await getSiteContent();
@@ -25,22 +25,10 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function HomePage() {
-  const data = await getHomePageData();
-
+export default function HomePage() {
   return (
-    <>
-      <HomeJsonLd content={data.content} />
-      {data.sections.map((section) => (
-        <HomeSectionRenderer
-          key={section.id}
-          section={section}
-          banners={data.banners}
-          categories={data.categories}
-          products={data.products}
-          content={data.content}
-        />
-      ))}
-    </>
+    <Suspense fallback={<HomeSkeleton />}>
+      <HomeContent />
+    </Suspense>
   );
 }

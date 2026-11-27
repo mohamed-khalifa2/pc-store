@@ -1,57 +1,57 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useRef } from "react";
 
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
-import { useWebGLSupport } from "@/hooks/use-webgl-support";
 
-import { HeroCopy } from "@/features/scroll-hero/components/HeroCopy";
-import { HeroModelStage } from "@/features/scroll-hero/components/HeroModelStage";
-import { HeroStatic } from "@/features/scroll-hero/components/HeroStatic";
+import { HeroHeader } from "@/features/scroll-hero/components/HeroHeader";
 import { SmoothScrollProvider } from "@/features/scroll-hero/components/SmoothScrollProvider";
 import { HERO_STEPS, type HeroStep } from "@/features/scroll-hero/config/steps";
-import { useHeroTimeline } from "@/features/scroll-hero/hooks/useHeroTimeline";
-import { createHeroRuntime } from "@/features/scroll-hero/lib/hero-runtime";
+import { useHeroParallax } from "@/features/scroll-hero/hooks/useHeroParallax";
 
 type ScrollHeroProps = {
   title?: string | null;
   subtitle?: string | null;
+  imageSrc?: string;
+  imageAlt?: string;
   steps?: readonly HeroStep[];
 };
 
-export function ScrollHero({ title, subtitle, steps = HERO_STEPS }: ScrollHeroProps) {
+export function ScrollHero({
+  title,
+  subtitle,
+  imageSrc,
+  imageAlt,
+  steps = HERO_STEPS,
+}: ScrollHeroProps) {
   const reducedMotion = usePrefersReducedMotion();
-  const webGLAvailable = useWebGLSupport();
   const rootRef = useRef<HTMLElement | null>(null);
-  const stageRef = useRef<HTMLDivElement | null>(null);
-  const runtime = useMemo(() => createHeroRuntime(), []);
+  const imageRef = useRef<HTMLDivElement | null>(null);
+  const glowRef = useRef<HTMLDivElement | null>(null);
+  const copyRef = useRef<HTMLDivElement | null>(null);
 
-  useHeroTimeline({
+  useHeroParallax({
     rootRef,
-    stageRef,
-    runtime,
-    enabled: !reducedMotion && webGLAvailable,
+    imageRef,
+    glowRef,
+    copyRef,
+    enabled: !reducedMotion,
   });
 
-  if (reducedMotion || !webGLAvailable) {
-    return (
-      <section aria-label="PC case overview">
-        <HeroStatic title={title} subtitle={subtitle} steps={steps} />
-      </section>
-    );
-  }
-
   return (
-    <section
-      ref={rootRef}
-      aria-label="Interactive PC case build"
-      className="relative h-[240vh] md:h-[400vh]"
-    >
+    <section ref={rootRef} aria-label="Featured PC build" className="relative isolate">
       <SmoothScrollProvider />
-      <div ref={stageRef} className="relative h-screen overflow-hidden">
-        <HeroModelStage runtime={runtime} />
-        <HeroCopy steps={steps} subtitle={subtitle} />
-      </div>
+      <HeroHeader
+        title={title}
+        subtitle={subtitle}
+        imageSrc={imageSrc}
+        imageAlt={imageAlt}
+        steps={steps}
+        imageRef={imageRef}
+        glowRef={glowRef}
+        copyRef={copyRef}
+        interactive={!reducedMotion}
+      />
     </section>
   );
 }

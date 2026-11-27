@@ -1,16 +1,14 @@
 "use client";
 
-import { Button } from "@/components/ui/Button";
-import { ErrorState } from "@/components/ui/ErrorState";
-import { ADMIN_COPY } from "@/features/admin/config/copy";
+import { AdminRouteError } from "@/features/admin/components/AdminRouteError";
 
-type ErrorProps = { reset: () => void };
+const TITLE = "Categories could not be loaded.";
+
+type ErrorProps = {
+  error: Error & { digest?: string };
+  reset: () => void;
+};
 
 export default function Error({ reset }: ErrorProps) {
-  return (
-    <div className="space-y-8">
-      <ErrorState title={ADMIN_COPY.loadError} description="Categories could not be loaded." />
-      <Button onClick={reset}>Try again</Button>
-    </div>
-  );
+  return <AdminRouteError reset={reset} title={TITLE} />;
 }

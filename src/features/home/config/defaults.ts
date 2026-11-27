@@ -1,5 +1,6 @@
 import { ROUTES, SITE_NAME } from "@/lib/constants";
 
+import { BUNDLE_COPY } from "@/features/bundles/config/copy";
 import { DEFAULT_BANNER_VARIANTS, HOME_SECTION_KIND } from "@/features/home/config/sections";
 import type { HomeSection } from "@/features/home/types";
 
@@ -53,6 +54,16 @@ export const DEFAULT_HOME_SECTIONS: readonly HomeSection[] = [
     body: {},
     config: { limit: 4 },
     sortOrder: 50,
+  },
+  {
+    id: "default-bundles",
+    key: "home.bundles",
+    kind: HOME_SECTION_KIND.bundles,
+    title: BUNDLE_COPY.homeTitle,
+    subtitle: BUNDLE_COPY.homeDescription,
+    body: {},
+    config: {},
+    sortOrder: 55,
   },
   {
     id: "default-build-cta",

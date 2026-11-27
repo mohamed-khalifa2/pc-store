@@ -2,6 +2,8 @@ import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
 const ADMIN_ROLE = "admin";
+const USER_PAGE_SIZE = 200;
+const MAX_USER_PAGES = 50;
 
 const envSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.url(),
@@ -12,6 +14,22 @@ const envSchema = z.object({
 const argsSchema = z.object({
   email: z.email(),
 });
+
+async function findUserByEmail(supabase, email) {
+  for (let page = 1; page <= MAX_USER_PAGES; page += 1) {
+    const { data, error } = await supabase.auth.admin.listUsers({
+      page,
+      perPage: USER_PAGE_SIZE,
+    });
+
+    if (error) throw error;
+
+    const match = data.users.find((candidate) => candidate.email === email);
+    if (match || data.users.length < USER_PAGE_SIZE) return match ?? null;
+  }
+
+  return null;
+}
 
 async function main() {
   const env = envSchema.parse(process.env);
@@ -24,16 +42,12 @@ async function main() {
     },
   });
 
-  const { data: found, error: lookupError } = await supabase.auth.admin.getUserByEmail(email);
+  const found = await findUserByEmail(supabase, email);
 
-  if (lookupError) {
-    throw lookupError;
-  }
-
-  if (found.user) {
-    const { error } = await supabase.auth.admin.updateUserById(found.user.id, {
+  if (found) {
+    const { error } = await supabase.auth.admin.updateUserById(found.id, {
       app_metadata: {
-        ...found.user.app_metadata,
+        ...found.app_metadata,
         role: ADMIN_ROLE,
       },
     });

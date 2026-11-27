@@ -20,13 +20,12 @@ export function AdminSidebar({ onNavigate, className }: AdminSidebarProps) {
           PC<span className="text-accent">{"//"}</span>STORE
         </Link>
       </div>
-      <nav aria-label="Admin navigation" className="py-4">
+      <nav aria-label="Admin navigation" className="flex flex-col py-4">
         {ADMIN_NAV_ITEMS.map((item) => (
           <AdminNavLink
             key={item.href}
             href={item.href}
             label={item.label}
-            short={item.short}
             onNavigate={onNavigate}
           />
         ))}

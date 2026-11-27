@@ -3,6 +3,7 @@ export const ADMIN_COPY = {
   dashboard: "Dashboard",
   openNav: "Open admin navigation",
   closeNav: "Close admin navigation",
+  adminNav: "Admin navigation",
   save: "Save changes",
   saving: "Saving…",
   create: "Create",

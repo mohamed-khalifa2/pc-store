@@ -132,7 +132,7 @@ Official docs were checked before implementation. Direct fetches to `supabase.co
 
 - Add admin forms/actions that use `createAdminClient()` or verified admin claims for trusted mutations, including revalidating `CACHE_TAGS`.
 - Add the first real admin user with `pnpm admin:bootstrap` after `pnpm db:start`.
-- Replace the placeholder SVG artwork with the transparent WebP renders described in `docs/PLACEHOLDER-ART.md`.
+- Replace the hero PNG collage and category component PNGs with final customer-approved art when it arrives. Sources, authors, and licenses for the current assets are documented in `docs/PLACEHOLDER-ART.md`.
 - Connect the newsletter form to a validated Server Action when the subscription data model exists.
 - Measure Lighthouse mobile performance and scroll smoothness on representative hardware, then tune if either target is missed.
 - Re-run the full local Supabase stack verification when a container runtime is available.
@@ -223,3 +223,108 @@ Official docs were checked before implementation. Direct fetches to `supabase.co
 - Final production smoke test on `http://localhost:3500` mounted one WebGL canvas and the focusable drag group with no console errors. Lighthouse reported accessibility `1`, best practices `1`, SEO `1`, and no listed failures.
 - Local-run follow-up: after the SVG fallback disappeared, the canvas was blank because the R3F root was left inactive when its loader suspended past the canvas. Moving the Suspense boundary outside `<Canvas>` fixed it; a headless production capture now shows the assembled case in the hero region where the pre-fix capture was blank.
 - Lighthouse mobile performance and a true 60fps measurement on representative hardware remain unmeasured in this environment, as in earlier phases.
+
+## Phase 8 verified conventions (2026-11-22)
+
+- Current stable versions were re-confirmed from the npm registry and match the installed versions: Next.js `16.4.6`, React `19.3.1`, Tailwind CSS `4.3.5`, `@supabase/ssr` `0.12.7`, `@supabase/supabase-js` `2.119.2`, GSAP `3.15.1`, Lenis `1.3.27`, and Zod `4.6.7`.
+- Bundled Next.js 16 guides re-read: `node_modules/next/dist/docs/01-app/02-guides/lazy-loading.md` and `node_modules/next/dist/docs/01-app/03-api-reference/02-components/image.md`. `next/dynamic` with `ssr: false` must stay in a Client Component; `preload` is the current LCP image prop; `unoptimized` is appropriate for SVG.
+- Official Next.js lazy-loading and GSAP ScrollTrigger docs were checked again. ScrollTrigger was configured with `scrub`, `invalidateOnRefresh`, and `context.revert()` cleanup; Lenis remains synced through the existing GSAP ticker.
+- Supabase publishable/secret key naming, `getClaims()`-based server identity, and the `proxy.ts` convention are unchanged by this UI phase.
+
+## Phase 8 implementation decisions
+
+- The pinned 3D/GLB hero is replaced by a simpler SVG-first header: one large artwork placeholder, editable text, two CTAs, an icon strip, and subtle depth motion. This supersedes the Phase 4/7 hero decisions that described `HeroStatic`, `HeroStage`, R3F, and GLB models.
+- The final artwork is intentionally a placeholder at `public/images/hero/hero-computer-placeholder.svg`; its path and intrinsic size live in `features/scroll-hero/config/hero-artwork.ts`. The user will supply the final SVG later.
+- "Alive, not flat" is built from transform/opacity layers only: a CSS float animation on the artwork, a drifting glow layer, pointer-driven tilt through CSS custom properties, and a GSAP/ScrollTrigger scroll parallax. Reduced motion renders identical static markup with no GSAP, Lenis, tilt, or CSS keyframe motion.
+- GSAP/ScrollTrigger is dynamically imported when the above-the-fold hero mounts; no `IntersectionObserver` gate is needed for this route. `SmoothScrollProvider` still lazy-loads Lenis and keeps `ScrollTrigger.update()` synced with its RAF.
+- Admin-controlled hero copy still flows through `getHeroSteps()`; the new header uses the first step for badge/headline/body and the last step for the primary CTA.
+- After a usage audit confirmed no remaining imports, all R3F/Three/GLB-only source files, `public/models/`, `public/images/hero/parts/`, `scripts/optimize-hero-models.mjs`, the `models:optimize` script, and the `three`, `@react-three/fiber`, `meshoptimizer`, `@types/three`, and `@gltf-transform/cli` dependencies were removed. GSAP and Lenis remain because the parallax and banners still use them.
+
+## Phase 8 verification
+
+- `pnpm check` and `pnpm build` pass after the final parallax-hook change and dependency cleanup. The route table is unchanged from earlier phases.
+- Production browser smoke test on `http://localhost:3000`: the hero section mounts, the placeholder SVG loads with `naturalWidth === 900`, no WebGL canvas is created, and the browser console is empty.
+- GSAP initialized the scrub timeline immediately: inline transforms are present on the artwork (`translate(0%, -6%)`), glow, and copy layers, and the CSS float animation resolves to `hero-float`.
+- Synthetic pointer events confirmed the artwork writes `--hero-rotate-x: 1.50deg` / `--hero-rotate-y: 1.50deg` and resets both to `0deg` on leave.
+- The initial HTML contains the hero artwork and icon strip with no `<canvas>`, confirming the static `HeroHeader` fallback renders before the dynamic client hero mounts.
+- Lighthouse reported accessibility `1`, best practices `1`, and SEO `1` with no failures.
+- Scripted scrolling could not be observed in the hidden browser harness: rAF-driven scroll updates were throttled and `browser.scroll`/async rAF evaluation timed out. ScrollTrigger applied its initial inline values without errors; a manual wheel scroll in a visible desktop browser is still recommended.
+- Reduced-motion was not emulatable in the harness. The `usePrefersReducedMotion` gate, global `prefers-reduced-motion` overrides, and static `HeroHeader` fallback were verified by code and initial HTML; an OS-level reduced-motion check is still recommended.
+
+## Phase 9 verified conventions (2026-11-23)
+
+- npm registry still reports the pinned versions as current stable: Next.js `16.4.6`, React `19.3.1`, Tailwind CSS `4.3.5`, `@supabase/ssr` `0.12.7`, `@supabase/supabase-js` `2.119.2`, GSAP `3.15.1`, Lenis `1.3.27`, and Zod `4.6.7`.
+- Bundled Next.js 16 guides still specify `proxy.ts` (not `middleware.ts`) at the same level as `app`; the existing `src/proxy.ts` remains correct.
+- Supabase SSR docs still require `getClaims()` for server identity verification and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` for the browser client; API key docs still distinguish `sb_publishable_...` from server-only `sb_secret_...`.
+- Tailwind CSS v4 docs confirm design tokens belong in `@theme`, with `--color-*`, `--spacing-*`, `--radius-*`, `--shadow-*`, `--ease-*`, and `--animate-*` mapping to utilities. No config file is needed.
+- React docs confirm `useSyncExternalStore` for browser APIs; the existing reduced-motion, cart-hydration, and Lenis patterns remain appropriate.
+- Lenis and GSAP are unchanged; this phase is UI-only and introduces no new animation dependency.
+
+## Phase 9 implementation decisions
+
+- No icon package was added. All new icons are dumb inline SVG components in `src/components/ui/icons/`, using `currentColor`, `aria-hidden`, and the existing `cn()` helper. This keeps the bundle small and matches the existing `HeroIcon` pattern.
+- Cart, close, menu, filter, search, chevron, arrow, social, and quantity icons share one visual language. `QuantityStepper` is a shared dumb primitive so the cart drawer and product detail page do not duplicate plus/minus controls.
+- Social URLs remain admin-editable `site_content` values. A single `SOCIAL_LINKS` config labels them, maps them to icons, and is reused by the footer and admin settings form; no external URLs were added to `ROUTES`.
+- The cart chip replaces the redundant desktop "Cart" nav link. Mobile navigation keeps the same two primary routes and relies on the always-visible cart chip for cart access.
+- Header height moved from `h-16` to `h-20`; the store shell no longer hardcodes a viewport-minus-header height because `flex-1` handles the remaining space more robustly.
+- Drawer motion uses tokenized `fade-in` and `drawer-in` keyframes. Transform/opacity only; the global reduced-motion override covers them.
+- Product catalog polish adds a dedicated header, filter subcomponents, search icon, card hover affordance, and previous/next pagination controls while keeping pages composition-only and all files under the 150-line limit.
+- Lighthouse accessibility regressions found during this phase were fixed by using `surface-400` for small footer headings and removing the comma from the cart button's accessible name so it contains its visible "Cart 2" label.
+
+## Phase 10 implementation decisions
+
+- The hero is now full-first-screen using `min-h-[calc(100svh-5rem)]` on the outer wrapper, subtracting the sticky `h-20` header. `svh` avoids mobile browser-chrome layout jumps. The feature-icon strip stays inside the same full-screen wrapper.
+- Artwork is ordered first below `lg` (`order-1 lg:order-2`) and copy second (`order-2 lg:order-1`). Desktop keeps copy on the left and art on the right. The parallax refs still point at the inner layers, so GSAP behavior is unchanged.
+- The hero badge and accented `power` span were removed. The headline is now a single plain-text heading; `home.hero.badge` was deleted from the site-content allow-list, defaults, hero admin form, and seed body because it was already unused.
+- `Why PC//STORE` points now receive an icon by index from `WHY_US_ICONS`. Four dumb inline SVG primitives were added under `src/components/ui/icons/`; no icon package was introduced.
+- About and Terms & policies are intentionally static pages. Copy lives in `features/site-content/config/static-pages.ts` and is rendered by one shared `StaticPageView`; no migration or admin form was added because the user requested static content.
+- Bundles are a config-driven catalog feature, not new database entities. `BUNDLE_DEFINITIONS` stores curated product slugs and discount percentages; `getBundles()` resolves real published products through the existing cached product query and recomputes totals server-side. This avoids duplicating generated Supabase types and needs no new RLS policies.
+- Bundles get a public `/bundles` route plus a home section. The database change is limited to extending `home_sections_kind_check` with `bundles` through migration `202611200017_add_bundles_home_section.sql`; generated types are unchanged because `kind` is already stored as `string`.
+- Home now streams through `HomeContent` with a `HomeSkeleton` fallback. Product, product-detail, related-product, and bundle skeletons reuse card skeletons that mirror the real `aspect-[4/3]`, `aspect-[16/10]`, and `aspect-square` assets, grid gaps, filter-card shape, and button heights to reduce layout shift.
+- No new animation dependency was added. All new motion remains hover/transition based using existing tokens and the global reduced-motion rules.
+- Post-build Lighthouse fixes: bundle metadata, the Why-card index, and the static-page updated date now use `surface-400` for sufficient contrast; bundle cards use `h2` on the standalone `/bundles` page so headings descend from the page `h1`; the cart chip no longer overrides its accessible name, so the name is derived directly from the visible `Cart` and count text.
+
+## Phase 11: real component artwork decisions
+
+- The SVG hero placeholder and the six category SVGs were replaced with locally stored transparent PNGs derived from Wikimedia Commons photographs. Sources, authors, licenses, and processing notes live in `docs/PLACEHOLDER-ART.md`; the hero composite is shared under CC BY-SA 4.0 because it includes CC BY-SA material.
+- The hero is a single composite image so the existing tilt, float, parallax, and `preload` behavior is unchanged. `HERO_ARTWORK` now stores the real intrinsic size (`1338×1085`), the alt text names the visible components, and `unoptimized` was removed because `next/image` optimizes local raster images.
+- The SSD and full-tower case had uniform studio backgrounds; an edge-connected color key produced their transparent cutouts. The other four sources were already transparent. All files were trimmed and resized before being written to `public/images/`.
+- Category cards and category detail heroes now use `object-contain` with padding instead of `object-cover`, so tall or wide component cutouts are not cropped. Remote Supabase image paths still use `unoptimized`.
+- Seed paths for the six default categories now use `.png` to match the local filenames; the admin image-picker fallback and typed defaults were updated in the same pass. Banner, product, and the three extra seeded categories keep their existing placeholders.
+- Markdown/table formatting is handled by Prettier; no new runtime dependency was added for image processing because the one-time asset preparation ran outside the application build.
+
+## Admin bootstrap note (2026-11-25)
+
+- Created the Supabase Auth account `test@test.com` in the configured remote project with `app_metadata.role = "admin"` and email confirmation enabled. Sign-in with that account was verified through the Auth API.
+- The requested password was used as provided for this one-off admin account, even though the public signup schema and `pnpm admin:bootstrap` require at least 8 characters. The weaker value is not adopted as an application-wide policy.
+- `scripts/create-first-admin.mjs` was updated for `@supabase/auth-js` 2.119.2: `getUserByEmail()` is no longer available, so the lookup now uses paginated `listUsers()`. Re-running the script confirmed the existing user keeps its admin role.
+- This workspace has `.env` but no `.env.local`, so the one-off command used `--env-file=.env`. The documented `pnpm admin:bootstrap` script still expects `.env.local`.
+
+## Phase 12 verified conventions (2026-11-25)
+
+- npm registry `latest` values re-confirmed today: Next.js `16.4.6`, React `19.3.1`, `@supabase/supabase-js` `2.119.2`, `@supabase/ssr` `0.12.7`, Tailwind CSS `4.3.5`, Zod `4.6.7`, GSAP `3.15.1`, Prettier `3.10.1`, and Lenis `1.3.28` (patched from `1.3.27`). ESLint `10.15.0` is newest but the pinned `9.39.5` remains necessary for `eslint-config-next@16.4.6` peer compatibility.
+- Bundled Next.js 16 docs were re-read: `proxy.ts` must sit beside `app`; `preload` replaces deprecated `priority`; SVG should remain `unoptimized`; Server Actions remain the mutation boundary with `revalidateTag(tag, "max")` for public reads and `updateTag()` for admin read-your-writes.
+- Supabase conventions are unchanged: publishable/secret key naming, `getClaims()` for verified server identity, `app_metadata.role` for admin authorization, and RLS policies backed by `public.is_admin()`.
+
+## Phase 12 implementation decisions
+
+- Admin route polish is shared, not duplicated: `AdminRouteSkeleton` and `AdminRouteError` replace per-route loading/error files, `DataTable` scrolls horizontally on small screens, and `AdminToast` auto-dismisses with a manual close button and `aria-live`.
+- The mobile admin drawer is a real dialog: Escape closes it, focus moves into it on open and returns to the trigger on close, and `aria-expanded`/`aria-controls` are driven by state. The active nav state uses the shared route constant instead of a hardcoded `/admin` check.
+- Hero artwork is admin-editable through `site_content` keys `home.hero.image` and `home.hero.image_alt`. The uploader stores a `site-assets` path, public reads resolve it with `resolveAssetUrl()`, and the built-in PNG remains the fallback when no replacement is stored.
+- `next.config.ts` adds a Supabase Storage remote-image pattern derived from `NEXT_PUBLIC_SUPABASE_URL`; no public secret is embedded in the config.
+- Bundles remain config-first, but the definitions are now stored as validated JSON in `site_content` under `bundles.definitions`. This avoids a new table, migration, and generated-type change. `BUNDLE_DEFINITIONS` is still the seed/fallback.
+- Bundle admin is full CRUD through guarded Server Actions: create, edit, and delete rewrite the validated definitions JSON. Slug/id uniqueness is checked server-side before saving.
+- Public hero and bundle reads reuse `getSiteContent()`, so the existing `revalidateTag("site-content", "max")` invalidation covers both new editors.
+- Admin queries distinguish an un-migrated Supabase schema from real load failures. Missing relations (`PGRST205` / `42P01`) fall back to built-in defaults or empty admin states so every route remains usable before migrations are applied; invalid rows, permission errors, and transport failures still throw to the shared admin error boundary.
+- The cookie-based Supabase server client calls `connection()` before `cookies()`/`getClaims()`. Supabase SSR reads `Date.now()` internally while loading a session; deferring that client to request time follows the Next.js 16 Cache Components guidance and removes `blocking-prerender-current-time` warnings. All session reads are already behind `<Suspense>` or run in Server Actions.
+- `BundleTable` is a Client Component because it passes row-specific callbacks into `ConfirmDialog`. Keeping it server-rendered caused React to reject a function prop crossing the server/client boundary.
+- **Roles:** there is still exactly one application role, `admin` (`app_metadata.role = "admin"`). No editor, manager, or viewer tier was introduced. Every admin gets the same full capability set: hero artwork, banners, home sections, site content/settings, categories and category images, products and product images, bundles, order viewing, order status updates, and invoice printing.
+
+## Phase 12 verification
+
+- `pnpm check` and `pnpm build` pass. The build route table includes `/admin/bundles`, `/admin/bundles/new`, and `/admin/bundles/[id]` alongside the existing admin routes, all as Partial Prerender routes.
+- Production browser smoke test on `http://localhost:3001`: the public home, bundles, categories, and products pages render from typed defaults with no console errors. The authenticated admin shell renders, and the new hero, banner, bundle, category, product, order, content, and settings screens expose their expected forms/panels.
+- A follow-up production server on `http://localhost:3002` confirmed the `connection()` fix: login and the authenticated `/admin` shell still work, and the server log contains zero `Date.now()` / `blocking-prerender-current-time` warnings.
+- The browser harness never fires `requestAnimationFrame`, so React's streamed Suspense reveal stays hidden there; DOM-level checks and native login submission were used instead. This is a harness limitation, not an application redirect or render failure.
+- A follow-up production server confirmed all eight primary admin routes (`/admin`, banners, categories, products, orders, bundles, content, settings) render with no `Site content could not be loaded`, `Functions cannot be passed`, or `Date.now()` errors, even against the un-migrated remote database.
+- **Still blocked:** the configured remote Supabase project has Auth but no migrated `public` tables (`site_content`, `banners`, `categories`, `products`, `orders` all return `PGRST205`). Reads now use config defaults/empty states, but DB-backed create/update/delete flows for hero artwork, category images, product images, and bundles still require the migrations to be applied. With no Docker/Podman/WSL runtime for a local stack, those writes could not be executed end to end.

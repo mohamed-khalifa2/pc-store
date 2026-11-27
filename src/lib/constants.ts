@@ -32,12 +32,15 @@ export const ROUTES = {
   home: "/",
   products: "/products",
   product: (slug: string) => `/products/${slug}`,
+  bundles: "/bundles",
   categories: "/categories",
   category: (slug: string) => `/categories/${slug}`,
   cart: "/cart",
   checkout: "/checkout",
   orders: "/orders",
   order: (id: string) => `/orders/${id}`,
+  about: "/about",
+  terms: "/terms",
   login: "/login",
   signup: "/signup",
   admin: "/admin",
@@ -50,6 +53,13 @@ export const NAV_LABELS = {
   menuOpen: "Open menu",
   menuClose: "Close menu",
   cart: "Cart",
+} as const;
+
+export const FOOTER_LABELS = {
+  explore: "Explore",
+  contact: "Contact",
+  follow: "Follow",
+  visit: "Visit",
 } as const;
 
 export const SUPABASE_REQUEST_TIMEOUT_MS = 5000;
