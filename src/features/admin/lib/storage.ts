@@ -10,7 +10,8 @@ import {
   adminSuccess,
   type AdminActionResult,
 } from "@/features/admin/lib/action-result";
-import { ADMIN_UPLOAD_LIMITS } from "@/features/admin/config/uploads";
+import { ADMIN_COPY } from "@/features/admin/config/copy";
+import { ADMIN_UPLOAD_ERRORS, ADMIN_UPLOAD_LIMITS } from "@/features/admin/config/uploads";
 
 export type AdminSupabase = SupabaseClient<Database>;
 export type AdminStorageBucket = (typeof STORAGE_BUCKETS)[keyof typeof STORAGE_BUCKETS];
@@ -29,6 +30,23 @@ export function storagePath(prefix: string, file: File): string {
   return `${safePrefix}/${crypto.randomUUID()}.${extension}`;
 }
 
+function uploadErrorMessage(message: string): string {
+  const normalized = message.toLowerCase();
+  if (normalized.includes("bucket not found") || normalized.includes("bucket does not exist")) {
+    return ADMIN_UPLOAD_ERRORS.bucketMissing;
+  }
+  if (normalized.includes("row-level security") || normalized.includes("permission denied")) {
+    return ADMIN_UPLOAD_ERRORS.permission;
+  }
+  if (normalized.includes("mime") || normalized.includes("media type")) {
+    return ADMIN_UPLOAD_ERRORS.invalidType;
+  }
+  if (normalized.includes("size") || normalized.includes("limit")) {
+    return ADMIN_UPLOAD_ERRORS.tooLarge;
+  }
+  return ADMIN_UPLOAD_ERRORS.failed;
+}
+
 export async function uploadImage(
   client: AdminSupabase,
   bucket: AdminStorageBucket,
@@ -40,12 +58,10 @@ export async function uploadImage(
   }
   const limits = ADMIN_UPLOAD_LIMITS[bucket];
   if (!limits.mimeTypes.includes(file.type) || !MIME_EXTENSIONS[file.type]) {
-    return adminFailure<string>("That image type is not supported for this destination.");
+    return adminFailure<string>(ADMIN_UPLOAD_ERRORS.invalidType);
   }
   if (file.size > limits.maxBytes) {
-    return adminFailure<string>(
-      `Images for this destination must be ${Math.floor(limits.maxBytes / (1024 * 1024))} MB or smaller.`,
-    );
+    return adminFailure<string>(ADMIN_UPLOAD_ERRORS.tooLarge);
   }
 
   const path = storagePath(prefix, file);
@@ -56,8 +72,8 @@ export async function uploadImage(
   });
 
   return error
-    ? adminFailure<string>("The image could not be uploaded.")
-    : adminSuccess("Image uploaded.", path);
+    ? adminFailure<string>(uploadErrorMessage(error.message))
+    : adminSuccess(ADMIN_COPY.uploaded, path);
 }
 
 export async function removeImages(

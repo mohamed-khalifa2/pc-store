@@ -23,3 +23,12 @@ export const ADMIN_UPLOAD_LIMITS: Record<UploadBucket, UploadLimit> = {
     mimeTypes: [...RASTER_TYPES, "image/svg+xml"],
   },
 };
+
+export const ADMIN_UPLOAD_ERRORS = {
+  bucketMissing:
+    "The storage bucket for this destination is missing. Apply the Supabase storage migration.",
+  permission: "You do not have permission to upload to this destination.",
+  invalidType: "That image type is not supported for this destination.",
+  tooLarge: "That image is too large for this destination.",
+  failed: "The image could not be uploaded.",
+} as const;

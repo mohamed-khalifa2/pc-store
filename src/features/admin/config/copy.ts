@@ -18,4 +18,9 @@ export const ADMIN_COPY = {
   loadError: "Admin data could not be loaded.",
   invalidId: "That record no longer exists.",
   unexpectedError: "Something went wrong. Please try again.",
+  uploaded: "Image uploaded.",
+  uploading: "Uploading…",
+  retry: "Retry",
+  chooseImage: "Choose image",
+  addImages: "Add images",
 } as const;

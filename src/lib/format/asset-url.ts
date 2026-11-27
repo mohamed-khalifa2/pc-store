@@ -13,7 +13,14 @@ export function resolveAssetUrl(
   fallback: string,
 ): string {
   if (!path) return fallback;
-  if (isRemoteUrl(path) || path.startsWith("/") || path.startsWith("data:")) return path;
+  if (
+    isRemoteUrl(path) ||
+    path.startsWith("/") ||
+    path.startsWith("data:") ||
+    path.startsWith("blob:")
+  ) {
+    return path;
+  }
 
   try {
     const env = getPublicEnv();

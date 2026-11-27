@@ -24,8 +24,16 @@ export type Env = z.infer<typeof envSchema>;
 let cachedPublicEnv: PublicEnv | undefined;
 let cachedEnv: Env | undefined;
 
+function publicEnvSource() {
+  return {
+    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+  };
+}
+
 export function getPublicEnv(): PublicEnv {
-  cachedPublicEnv ??= publicEnvSchema.parse(process.env);
+  cachedPublicEnv ??= publicEnvSchema.parse(publicEnvSource());
   return cachedPublicEnv;
 }
 
