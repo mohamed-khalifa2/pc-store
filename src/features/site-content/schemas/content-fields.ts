@@ -1,15 +1,18 @@
 import { z } from "zod";
 
-import { HERO_IMAGE_PREFIX } from "@/features/scroll-hero/config/hero-artwork";
+import { HERO_ARTWORK, HERO_IMAGE_PREFIX } from "@/features/scroll-hero/config/hero-artwork";
 import { SITE_CONTENT_KEYS, type SiteContentKey } from "@/features/site-content/config/keys";
 
 const IMAGE_NAME = "[a-zA-Z0-9/_-]+\\.(png|webp|avif|jpe?g|svg)";
+const HERO_IMAGE_PATTERN = new RegExp(
+  `^(/${HERO_IMAGE_PREFIX}/${IMAGE_NAME}|${HERO_IMAGE_PREFIX}/${IMAGE_NAME})$`,
+);
 const heroImageSchema = z
   .string()
   .trim()
   .min(1, "Choose a hero image.")
-  .regex(
-    new RegExp(`^(/${HERO_IMAGE_PREFIX}/${IMAGE_NAME}|${HERO_IMAGE_PREFIX}/${IMAGE_NAME})$`),
+  .refine(
+    (value) => value === HERO_ARTWORK.src || HERO_IMAGE_PATTERN.test(value),
     "Choose a valid hero image.",
   );
 

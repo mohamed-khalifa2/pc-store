@@ -14,6 +14,7 @@ import { revalidatePublic } from "@/features/admin/lib/revalidate-public";
 import { requireAdmin } from "@/features/auth/lib/require-admin";
 import { CACHE_TAGS } from "@/lib/constants";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isMissingRelationError } from "@/lib/supabase/query-errors";
 
 import { SITE_CONTENT_KEYS, type SiteContentKey } from "@/features/site-content/config/keys";
 import { validateContentField } from "@/features/site-content/schemas/content-fields";
@@ -21,6 +22,7 @@ import { siteContentEntrySchema } from "@/features/site-content/schemas/site-con
 
 const ALLOWED_KEYS = new Set<string>(Object.values(SITE_CONTENT_KEYS));
 const SAVE_ERROR = "Content could not be saved.";
+const SAVE_SETUP_ERROR = "Content storage is not set up. Apply the Supabase migrations.";
 
 const keysSchema = z.array(z.string().min(1)).min(1).max(50);
 const entrySchema = siteContentEntrySchema.extend({
@@ -74,7 +76,9 @@ export async function updateSiteContent(formData: FormData): Promise<AdminAction
 
   const supabase = createAdminClient();
   const { error } = await supabase.from("site_content").upsert(rows, { onConflict: "key" });
-  if (error) return adminFailure(SAVE_ERROR);
+  if (error) {
+    return adminFailure(isMissingRelationError(error) ? SAVE_SETUP_ERROR : SAVE_ERROR);
+  }
 
   revalidatePublic([CACHE_TAGS.siteContent]);
   return adminSuccess<null>("Content saved.");
