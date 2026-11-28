@@ -327,7 +327,7 @@ Official docs were checked before implementation. Direct fetches to `supabase.co
 - A follow-up production server on `http://localhost:3002` confirmed the `connection()` fix: login and the authenticated `/admin` shell still work, and the server log contains zero `Date.now()` / `blocking-prerender-current-time` warnings.
 - The browser harness never fires `requestAnimationFrame`, so React's streamed Suspense reveal stays hidden there; DOM-level checks and native login submission were used instead. This is a harness limitation, not an application redirect or render failure.
 - A follow-up production server confirmed all eight primary admin routes (`/admin`, banners, categories, products, orders, bundles, content, settings) render with no `Site content could not be loaded`, `Functions cannot be passed`, or `Date.now()` errors, even against the un-migrated remote database.
-- **Still blocked:** the configured remote Supabase project has Auth but no migrated `public` tables (`site_content`, `banners`, `categories`, `products`, `orders` all return `PGRST205`). Reads now use config defaults/empty states, but DB-backed create/update/delete flows for hero artwork, category images, product images, and bundles still require the migrations to be applied. With no Docker/Podman/WSL runtime for a local stack, those writes could not be executed end to end.
+- At the time of this phase the configured remote Supabase project had Auth but no migrated `public` tables (`site_content`, `banners`, `categories`, `products`, `orders` all returned `PGRST205`). Reads used config defaults/empty states so every route remained usable. This was resolved later by applying all remote migrations; see the 2026-11-28 entry below.
 
 ## Image upload fix (2026-11-27)
 
@@ -338,3 +338,12 @@ Official docs were checked before implementation. Direct fetches to `supabase.co
 - Client-side URL resolution was the second preview bug: parsing the whole `process.env` object prevented Next from inlining `NEXT_PUBLIC_*` values into the browser bundle, so `resolveAssetUrl()` always threw and returned the fallback. `getPublicEnv()` now reads each public key with an explicit `process.env.NEXT_PUBLIC_*` reference while private keys remain server-only.
 - Hero saves were still failing after a successful upload because the configured database has no `public.site_content` table (`PGRST205`). Write actions now detect missing-relation errors and tell admins to apply the Supabase migrations instead of showing the generic content-save failure.
 - The hero image validator now accepts the built-in `HERO_ARTWORK.src` value, so saving the default artwork without uploading a replacement is valid. Previously that path failed client-side validation before reaching the database.
+
+## Remote Supabase migrations (2026-11-28)
+
+- The `pc-store` Supabase project was linked with the CLI using the project ref from `NEXT_PUBLIC_SUPABASE_URL`. No database password was required because the CLI used the authenticated login role.
+- A dry run listed all 17 migrations as pending. `supabase db push --remote --yes` applied them in order; a follow-up dry run reports `upToDate: true`.
+- The three Storage buckets had already been created directly. Migration `202611200013_create_storage_policies.sql` upserted their public/size/MIME configuration and added the missing `storage.objects` policies.
+- `GET /rest/v1/site_content` with the secret key now returns HTTP 200 instead of `PGRST205`.
+- Production browser test on `http://localhost:3013`: uploaded hero artwork, clicked **Save hero artwork**, saw `Content saved.`, reloaded the page, and confirmed the Supabase path and public thumbnail persisted. The test `site_content` rows and Storage object were deleted afterward.
+- Seed data was intentionally not applied; the admin tables remain empty until `supabase db seed` is run. The storefront still renders from typed config defaults.
